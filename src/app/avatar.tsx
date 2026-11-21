@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { goBack } from '@/ui/nav';
 import { AVATAR_OPTIONS, PALETTE, SKIN_TONES, isUnlocked, type AvatarPart } from '@/domain/rewards/avatar';
 import { useActiveProfile, useProgress } from '@/data/progressStore';
 import { AvatarView } from '@/ui/components/AvatarView';
@@ -55,8 +55,8 @@ export default function AvatarEditor() {
         <Swatches colors={PALETTE} value={a.hairColor} onPick={(hairColor) => setA({ ...a, hairColor })} />
         <Text style={[font.body, { color: t.text, marginTop: 14 }]}>لون الملابس</Text>
         <Swatches colors={PALETTE} value={a.outfitColor} onPick={(outfitColor) => setA({ ...a, outfitColor })} />
-        <BigButton label="حفظ" icon="✅" color={t.success} onPress={() => { setAvatar(a); router.back(); }} style={{ marginTop: 24 }} />
-        <BigButton small label="إلغاء" color={t.card} textColor={t.text} onPress={() => router.back()} style={{ marginTop: 10 }} />
+        <BigButton label="حفظ" icon="✅" color={t.success} onPress={() => { setAvatar(a); goBack(); }} style={{ marginTop: 24 }} />
+        <BigButton small label="إلغاء" color={t.card} textColor={t.text} onPress={goBack} style={{ marginTop: 10 }} />
       </ScrollView>
     </Screen>
   );

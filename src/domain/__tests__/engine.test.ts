@@ -7,19 +7,29 @@ const reduce = sessionReducer(rounds);
 describe('session engine', () => {
   it('completes a level after N correct rounds and never ends on mistakes', () => {
     let s = startSession(1, rounds);
-    s = reduce(s, { type: 'wrong' });
-    s = reduce(s, { type: 'wrong' });
+    s = reduce(s, { type: 'wrong', roundKey: s.roundKey });
+    s = reduce(s, { type: 'wrong', roundKey: s.roundKey });
     expect(shouldHint(s)).toBe(true);
     expect(s.phase).toBe('playing');
-    s = reduce(s, { type: 'correct', points: 2 }); // no first-try bonus
-    s = reduce(s, { type: 'correct', points: 2 }); // +1 bonus
+    s = reduce(s, { type: 'correct', points: 2, roundKey: s.roundKey }); // no first-try bonus
+    s = reduce(s, { type: 'correct', points: 2, roundKey: s.roundKey }); // +1 bonus
     expect(s.phase).toBe('playing');
-    s = reduce(s, { type: 'correct', points: 2 });
+    s = reduce(s, { type: 'correct', points: 2, roundKey: s.roundKey });
     expect(s.phase).toBe('levelComplete');
     expect(s.pointsThisLevel).toBe(2 + 3 + 3);
     expect(isPerfectLevel(s)).toBe(false);
     // Answers after completion are ignored
-    expect(reduce(s, { type: 'correct', points: 99 })).toBe(s);
+    expect(reduce(s, { type: 'correct', points: 99, roundKey: s.roundKey })).toBe(s);
+  });
+
+  it('ignores late or duplicate reports from an earlier round', () => {
+    let s = startSession(1, rounds);
+    const first = s.roundKey;
+    s = reduce(s, { type: 'correct', points: 2, roundKey: first });
+    const after = reduce(s, { type: 'correct', points: 2, roundKey: first }); // duplicate
+    expect(after).toBe(s);
+    expect(reduce(s, { type: 'wrong', roundKey: first })).toBe(s); // stale mistake
+    expect(s.round).toBe(1);
   });
 
   it('next advances the level, replay keeps it', () => {

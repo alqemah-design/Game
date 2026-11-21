@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { Avatar } from '@/domain/rewards/avatar';
 import {
-  addPoints, applyLevelComplete, createProfile,
+  addPoints, applyLevelComplete, createProfile, normalizeProfiles,
   type Artwork, type LevelResult, type Profile, type ProfileSettings, type ProgressEvents,
 } from '@/domain/progress';
 import { kvStorage } from './storage';
@@ -25,7 +25,8 @@ type Actions = {
   setAvatar: (avatar: Avatar) => void;
   updateSettings: (patch: Partial<ProfileSettings>) => void;
   completeLevel: (r: Omit<LevelResult, 'now'>) => ProgressEvents;
-  saveArtwork: (art: Omit<Artwork, 'id' | 'createdAt'>) => ProgressEvents;
+  /** New drawing → +5 points once. Saving again (same id) updates it in place, no points. */
+  saveArtwork: (art: Omit<Artwork, 'id' | 'createdAt'>, id?: string) => { id: string; isNew: boolean; events: ProgressEvents };
   deleteArtwork: (id: string) => void;
   resetProgress: () => void;
   wipeEverything: () => void;
@@ -34,6 +35,7 @@ type Actions = {
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 const NO_EVENTS: ProgressEvents = { achievements: [], stickers: [] };
+const MAX_ARTWORKS = 60;
 
 export const useProgress = create<State & Actions>()(
   persist(
@@ -71,14 +73,21 @@ export const useProgress = create<State & Actions>()(
           set((s) => ({ profiles: { ...s.profiles, [p.id]: profile } }));
           return events;
         },
-        saveArtwork: (art) => {
+        saveArtwork: (art, id) => {
           const p = get().activeId ? get().profiles[get().activeId!] : undefined;
-          if (!p) return NO_EVENTS;
+          if (!p) return { id: id ?? '', isNew: false, events: NO_EVENTS };
+          const existing = id ? p.artworks.find((a) => a.id === id) : undefined;
+          if (existing) {
+            const updated = { ...p, artworks: p.artworks.map((a) => (a.id === id ? { ...a, ...art } : a)) };
+            set((s) => ({ profiles: { ...s.profiles, [p.id]: updated } }));
+            return { id: existing.id, isNew: false, events: NO_EVENTS };
+          }
           const now = Date.now();
-          const withArt = { ...p, artworks: [{ ...art, id: newId(), createdAt: now }, ...p.artworks].slice(0, 60) };
+          const artId = newId();
+          const withArt = { ...p, artworks: [{ ...art, id: artId, createdAt: now }, ...p.artworks].slice(0, MAX_ARTWORKS) };
           const { profile, events } = addPoints(withArt, 5, now);
           set((s) => ({ profiles: { ...s.profiles, [p.id]: profile } }));
-          return events;
+          return { id: artId, isNew: true, events };
         },
         deleteArtwork: (id) => updateActive((p) => ({ ...p, artworks: p.artworks.filter((a) => a.id !== id) })),
         resetProgress: () =>
@@ -94,6 +103,14 @@ export const useProgress = create<State & Actions>()(
       partialize: ({ profiles, activeId, colorScheme }) => ({ profiles, activeId, colorScheme }),
       // Future schema changes go here, keyed by the persisted version.
       migrate: (persisted) => persisted as State,
+      // Validate whatever is on disk before it reaches the UI.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<State>;
+        const profiles = normalizeProfiles(p.profiles);
+        const activeId = p.activeId && profiles[p.activeId] ? p.activeId : (Object.keys(profiles)[0] ?? null);
+        const colorScheme = p.colorScheme === 'light' || p.colorScheme === 'dark' ? p.colorScheme : 'system';
+        return { ...current, profiles, activeId, colorScheme };
+      },
     },
   ),
 );

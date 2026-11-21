@@ -12,7 +12,8 @@
 
 ```bash
 npm install
-npm start            # ثم افتح التطبيق في Expo Go أو في development build
+npm run start:go     # للتجربة السريعة في تطبيق Expo Go على الجوال
+npm start            # مع development build (eas build --profile development)
 npm test             # اختبارات منطق الألعاب (Jest)
 npm run typecheck
 npm run lint

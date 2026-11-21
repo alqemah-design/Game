@@ -4,6 +4,9 @@ import { router } from 'expo-router';
 import { ALPHABET } from '@/domain/content/englishWords';
 import type { Difficulty, MathOp } from '@/domain/types';
 import { useActiveProfile, useProgress } from '@/data/progressStore';
+import { clearParentPass, hasParentPass } from '@/data/parentGate';
+import { ParentalGate } from '@/ui/components/ParentalGate';
+import { goBack } from '@/ui/nav';
 import { AvatarView } from '@/ui/components/AvatarView';
 import { BigButton } from '@/ui/components/BigButton';
 import { Pressy } from '@/ui/components/Pressy';
@@ -50,7 +53,16 @@ export default function Settings() {
   const p = useActiveProfile();
   const s = useProgress();
   const [name, setName] = useState(p?.name ?? '');
+  const [unlocked, setUnlocked] = useState(hasParentPass);
   if (!p) return null;
+  if (!unlocked) {
+    // Reached without passing the gate (deep link etc.): ask here.
+    return (
+      <Screen>
+        <ParentalGate visible onPass={() => setUnlocked(true)} onCancel={goBack} />
+      </Screen>
+    );
+  }
   const set = s.updateSettings;
   const st = p.settings;
 
@@ -72,7 +84,7 @@ export default function Settings() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
         <View style={styles.row}>
           <Text style={[font.title, { color: t.text, flex: 1 }]}>إعدادات الأهل</Text>
-          <BigButton small label="تم" onPress={() => router.back()} />
+          <BigButton small label="تم" onPress={() => { clearParentPass(); goBack(); }} />
         </View>
 
         <Section title="الأطفال">

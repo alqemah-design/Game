@@ -101,8 +101,10 @@ export function mathRound(level: number, s: GameSettings, rng: Rng): ChoiceRound
   let b = int(rng, lo, hi);
   if (op === '-' && b > a) [a, b] = [b, a]; // never negative results for kids
   if (op === '×') {
-    a = int(rng, Math.max(lo, 1), clamp(2 + level, 2, 12));
-    b = int(rng, Math.max(lo, 1), clamp(2 + level, 2, 12));
+    // Times tables stay within 1–12 whatever the +/− range is (a high "min" used to produce min > max).
+    const top = clamp(2 + level, 2, 12);
+    a = int(rng, 1, top);
+    b = int(rng, 1, top);
   }
   const prompt = { a, b, op };
   const answer = solve(prompt);

@@ -9,6 +9,7 @@ import { Pressy } from '../components/Pressy';
 import { ShapeIcon } from '../components/ShapeIcon';
 import { font, radius, useTheme } from '../theme/theme';
 import { Clock } from './Clock';
+import { speak } from '@/audio/speech';
 
 function ListenButton({ onPress, label = 'استمع' }: { onPress: () => void; label?: string }) {
   const t = useTheme();
@@ -37,8 +38,11 @@ export function FruitsGame({ api }: { api: GameApi }) {
   const t = useTheme();
   return (
     <ChoiceGame api={api} generate={G.produceRound} columns={2} optionHeight={80}
+      // The name is the answer: say it after a correct pick, or on tap once the hint is showing.
+      autoSpeak={false}
+      onSolved={(r) => r.speak && speak(r.speak.text, r.speak.lang)}
       renderPrompt={(r, replay) => (
-        <Pressy sound={false} onPress={replay} style={{ alignItems: 'center' }} accessibilityLabel="استمع للاسم">
+        <Pressy sound={false} disabled={!api.hint} onPress={replay} style={{ alignItems: 'center' }} accessibilityLabel={r.prompt.item.ar}>
           <Text style={{ fontSize: 120 }}>{r.prompt.item.emoji}</Text>
           <Text style={[font.body, { color: t.textMuted }]}>{r.prompt.lang === 'en' ? 'What is it in English?' : 'ما اسم هذه؟'}</Text>
         </Pressy>

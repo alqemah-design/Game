@@ -99,3 +99,14 @@ describe('specific rules', () => {
     expect(new Set(GAMES.map((g) => g.legacyKey)).size).toBe(17);
   });
 });
+
+describe('settings edge cases', () => {
+  it('multiplication stays within tables even when the parent sets a high minimum', () => {
+    for (let seed = 0; seed < 100; seed++) {
+      const r = C.mathRound(3, { ...S, math: { min: 40, max: 60, ops: ['×'] } }, createRng(seed));
+      expect(r.prompt.a).toBeGreaterThanOrEqual(1);
+      expect(r.prompt.a).toBeLessThanOrEqual(12);
+      expect(r.options[r.correctIndex]).toBe(C.solve(r.prompt));
+    }
+  });
+});

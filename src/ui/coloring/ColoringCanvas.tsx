@@ -25,6 +25,7 @@ export function ColoringCanvas({ page, initial, onSave }: { page: ColoringPage; 
   const [art, setArt] = useState<Snapshot>(initial ?? { fills: {}, strokes: [], stickers: [] });
   const [live, setLiveState] = useState<ArtStroke | null>(null);
   const liveRef = useRef<ArtStroke | null>(null);
+  const lastPt = useRef<[number, number] | null>(null);
   const setLive = (s: ArtStroke | null) => { liveRef.current = s; setLiveState(s); };
   const history = useRef<Snapshot[]>([]);
   const [w, setW] = useState(0);
@@ -37,10 +38,19 @@ export function ColoringCanvas({ page, initial, onSave }: { page: ColoringPage; 
     enabled: tool === 'brush',
     minDistance: 0,
     runOnJS: true,
-    onActivate: (e) => setLive({ d: `M${(e.x * scale).toFixed(1)} ${(e.y * scale).toFixed(1)}`, color, width: size }),
+    onActivate: (e) => {
+      lastPt.current = [e.x * scale, e.y * scale];
+      setLive({ d: `M${(e.x * scale).toFixed(1)} ${(e.y * scale).toFixed(1)}`, color, width: size });
+    },
     onUpdate: (e) => {
       const s = liveRef.current;
-      if (s) setLive({ ...s, d: `${s.d} L${(e.x * scale).toFixed(1)} ${(e.y * scale).toFixed(1)}` });
+      if (!s) return;
+      const x = e.x * scale, y = e.y * scale;
+      // Skip points closer than 2 units: keeps saved drawings small and redraws cheap.
+      const last = lastPt.current;
+      if (last && Math.hypot(x - last[0], y - last[1]) < 2) return;
+      lastPt.current = [x, y];
+      setLive({ ...s, d: `${s.d} L${x.toFixed(1)} ${y.toFixed(1)}` });
     },
     onDeactivate: () => {
       const s = liveRef.current;

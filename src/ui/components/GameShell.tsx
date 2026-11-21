@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { goBack } from '../nav';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { GAME_BY_ID } from '@/domain/games/catalog';
 import { effectiveLevel } from '@/domain/engine/difficulty';
@@ -37,6 +37,8 @@ export type GameApi = {
 };
 
 const NO_EVENTS: ProgressEvents = { achievements: [], stickers: [] };
+/** Boards driven by swipe gestures size themselves to the screen instead of scrolling. */
+const NO_SCROLL = new Set<GameId>(['maze']);
 
 /**
  * Every game renders inside this shell. It owns the level/round loop, scoring, saving and the
@@ -67,12 +69,15 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
 
   useEffect(() => () => { stopSpeaking(); }, []);
 
+  // Callbacks are tagged with the round they were handed out for; the engine drops stale ones
+  // (late timers, duplicate reports), so a round can never be counted twice or skipped.
+  const roundKey = s.roundKey;
   const correct = useCallback((points?: number) => {
     play('correct');
-    dispatch({ type: 'correct', points: points ?? meta.pointsPerRound(s.level) });
-  }, [meta, s.level]);
-  const wrong = useCallback(() => { play('tryAgain'); dispatch({ type: 'wrong' }); }, []);
-  const restartRound = useCallback(() => dispatch({ type: 'restartRound' }), []);
+    dispatch({ type: 'correct', points: points ?? meta.pointsPerRound(s.level), roundKey });
+  }, [roundKey, meta, s.level]);
+  const wrong = useCallback(() => { play('tryAgain'); dispatch({ type: 'wrong', roundKey }); }, [roundKey]);
+  const restartRound = useCallback(() => dispatch({ type: 'restartRound', roundKey }), [roundKey]);
 
   const rng = useMemo(() => createRng(seed + s.roundKey * 7919), [seed, s.roundKey]);
   const api: GameApi = {
@@ -89,7 +94,7 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
   return (
     <Screen>
       <View style={styles.header}>
-        <Pressy accessibilityRole="button" accessibilityLabel="رجوع" onPress={() => router.back()} style={[styles.iconBtn, { backgroundColor: t.card }]}>
+        <Pressy accessibilityRole="button" accessibilityLabel="رجوع" onPress={goBack} style={[styles.iconBtn, { backgroundColor: t.card }]}>
           <Text style={{ fontSize: 26 }}>→</Text>
         </Pressy>
         <View style={{ flex: 1, alignItems: 'center' }}>
@@ -101,7 +106,14 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
         </View>
       </View>
       {s.rounds > 1 && <RoundDots total={s.rounds} done={s.round} color={meta.color} track={t.border} />}
-      <View style={{ flex: 1, direction: meta.contentDir }}>{children(api)}</View>
+      {NO_SCROLL.has(gameId) ? (
+        <View style={{ flex: 1, direction: meta.contentDir }}>{children(api)}</View>
+      ) : (
+        // Scrolls only when the board is taller than the screen (small phones, large text).
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, direction: meta.contentDir }} bounces={false} keyboardShouldPersistTaps="handled">
+          {children(api)}
+        </ScrollView>
+      )}
       <SuccessModal
         visible={s.phase === 'levelComplete'}
         level={s.level}
@@ -111,7 +123,7 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
         effects={settings.effects}
         onNext={() => { setEvents(NO_EVENTS); dispatch({ type: 'next' }); }}
         onReplay={() => { setEvents(NO_EVENTS); dispatch({ type: 'replay' }); }}
-        onHome={() => router.back()}
+        onHome={goBack}
       />
     </Screen>
   );

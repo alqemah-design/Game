@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { goBack } from '@/ui/nav';
 import { ACHIEVEMENTS, STICKERS } from '@/domain/rewards/rewards';
 import { useActiveProfile } from '@/data/progressStore';
 import { BigButton } from '@/ui/components/BigButton';
@@ -39,7 +39,7 @@ export default function Rewards() {
             </View>
           );
         })}
-        <BigButton label="رجوع" onPress={() => router.back()} style={{ marginTop: 16 }} />
+        <BigButton label="رجوع" onPress={goBack} style={{ marginTop: 16 }} />
       </ScrollView>
     </Screen>
   );

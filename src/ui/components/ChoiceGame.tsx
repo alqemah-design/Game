@@ -22,6 +22,8 @@ type Props<P, O> = {
   autoSpeak?: boolean;
   /** Seconds before the answer is gently revealed; finishing in time earns a bonus. Ignored when noTimers is on. */
   timeLimit?: number;
+  /** Called when the child picks the right answer (e.g. to say the word as reinforcement). */
+  onSolved?: (round: ChoiceRound<P, O>) => void;
 };
 
 /** Generic multiple-choice board used by every "pick the right answer" game. */
@@ -30,7 +32,7 @@ export function ChoiceGame<P, O>(props: Props<P, O>) {
   return <ChoiceRoundView key={props.api.roundKey} {...props} />;
 }
 
-function ChoiceRoundView<P, O>({ api, generate, renderPrompt, renderOption, columns = 2, optionHeight = 96, autoSpeak = true, timeLimit }: Props<P, O>) {
+function ChoiceRoundView<P, O>({ api, generate, renderPrompt, renderOption, columns = 2, optionHeight = 96, autoSpeak = true, timeLimit, onSolved }: Props<P, O>) {
   const t = useTheme();
   const [round] = useState(() => generate(api.genLevel, api.settings, api.rng));
   const [wrongSet, setWrongSet] = useState<number[]>([]);
@@ -51,6 +53,7 @@ function ChoiceRoundView<P, O>({ api, generate, renderPrompt, renderOption, colu
     if (solved !== null || wrongSet.includes(i)) return;
     if (i === round.correctIndex) {
       setSolved(i);
+      onSolved?.(round);
       const fast = useTimer && !timedOut; // answered before the timer ran out
       setTimeout(() => api.correct(fast ? api.basePoints + 2 : undefined), 650); // speed bonus, never a penalty
     } else {

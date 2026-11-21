@@ -1,4 +1,4 @@
-import { applyLevelComplete, createProfile, importLegacy } from '../progress';
+import { applyLevelComplete, createProfile, importLegacy, normalizeProfiles } from '../progress';
 
 const NOW = new Date(2026, 10, 21, 10).getTime();
 
@@ -32,5 +32,25 @@ describe('progress rules', () => {
     expect(p.games.arabicLetters?.level).toBe(7);
     expect(p.points).toBe(900);
     expect(p.stars).toBe(12);
+  });
+});
+
+describe('loading saved data', () => {
+  it('repairs old or damaged profiles without losing valid progress', () => {
+    const out = normalizeProfiles({
+      a: { id: 'a', name: 'سارة', points: 120, stars: 'x', games: { maze: { level: 4, completed: 3 }, oldGame10: { level: 9 } }, settings: { sound: false, math: { max: 50 } } },
+      broken: 42,
+      b: { name: 'no id' },
+    });
+    expect(Object.keys(out)).toEqual(['a']);
+    const p = out.a;
+    expect(p.points).toBe(120);
+    expect(p.stars).toBe(0);
+    expect(p.games.maze).toMatchObject({ level: 4, completed: 3, plays: 0 });
+    expect(Object.keys(p.games)).toEqual(['maze']);
+    expect(p.settings.sound).toBe(false);
+    expect(p.settings.math).toEqual({ min: 0, max: 50, ops: ['+', '-'] });
+    expect(p.settings.difficulty).toBe('normal');
+    expect(Array.isArray(p.artworks)).toBe(true);
   });
 });

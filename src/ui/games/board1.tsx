@@ -174,7 +174,10 @@ export function WordBuilderGame({ api }: { api: GameApi }) {
   const [error, setError] = useState(false);
   const built = picked.map((i) => tiles[i]).join('');
 
-  useEffect(() => { setTimeout(() => speak(word.word.toLowerCase(), 'en'), 300); }, [word]);
+  useEffect(() => {
+    const id = setTimeout(() => speak(word.word.toLowerCase(), 'en'), 300);
+    return () => clearTimeout(id);
+  }, [word]);
 
   const tap = (i: number) => {
     if (picked.includes(i) || built.length >= word.word.length) return;
@@ -212,7 +215,7 @@ export function WordBuilderGame({ api }: { api: GameApi }) {
           </Pressy>
         ))}
       </View>
-      {picked.length > 0 && <Pressy onPress={() => setPicked((p) => p.slice(0, -1))} style={[styles.undo, { backgroundColor: t.card }]}><Text style={[font.body, { color: t.text }]}>⌫</Text></Pressy>}
+      {picked.length > 0 && built !== word.word && <Pressy onPress={() => setPicked((p) => p.slice(0, -1))} style={[styles.undo, { backgroundColor: t.card }]}><Text style={[font.body, { color: t.text }]}>⌫</Text></Pressy>}
     </View>
   );
 }

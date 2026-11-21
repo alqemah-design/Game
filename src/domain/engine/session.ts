@@ -24,12 +24,16 @@ export type SessionState = {
   roundKey: number;
 };
 
+/**
+ * In-round actions carry the roundKey they belong to. Anything tagged with an old round
+ * (a late timer, a duplicate report) is ignored, so a round can never be counted twice or skipped.
+ */
 export type SessionAction =
-  | { type: 'correct'; points: number }
-  | { type: 'wrong' }
+  | { type: 'correct'; points: number; roundKey: number }
+  | { type: 'wrong'; roundKey: number }
+  | { type: 'restartRound'; roundKey: number }
   | { type: 'next' }
-  | { type: 'replay' }
-  | { type: 'restartRound' };
+  | { type: 'replay' };
 
 export function startSession(level: number, roundsPerLevel: (level: number) => number): SessionState {
   return {
@@ -46,6 +50,7 @@ export function startSession(level: number, roundsPerLevel: (level: number) => n
 
 export function sessionReducer(roundsPerLevel: (level: number) => number) {
   return (s: SessionState, a: SessionAction): SessionState => {
+    if ('roundKey' in a && a.roundKey !== s.roundKey) return s;
     switch (a.type) {
       case 'correct': {
         if (s.phase !== 'playing') return s;

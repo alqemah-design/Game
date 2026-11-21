@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
+import { goBack } from '@/ui/nav';
 import Animated, { FadeInDown, BounceIn } from 'react-native-reanimated';
 import { useProgress } from '@/data/progressStore';
 import { DEFAULT_AVATAR, SKIN_TONES, PALETTE } from '@/domain/rewards/avatar';
@@ -20,7 +21,9 @@ export default function Welcome() {
 
   const start = () => {
     addProfile(name, avatar);
-    router.replace('/');
+    // From the parent area (add a child) unwind everything back to a clean Home; on first launch replace.
+    if (router.canDismiss()) router.dismissTo('/');
+    else router.replace('/');
   };
 
   return (
@@ -54,7 +57,7 @@ export default function Welcome() {
             onSubmitEditing={start}
           />
           <BigButton label="هيا نلعب!" icon="🚀" onPress={start} style={{ marginTop: 16 }} />
-          {hasProfiles && <BigButton small label="رجوع" color={t.card} textColor={t.text} onPress={() => router.back()} style={{ marginTop: 10 }} />}
+          {hasProfiles && <BigButton small label="رجوع" color={t.card} textColor={t.text} onPress={goBack} style={{ marginTop: 10 }} />}
         </Animated.View>
       </KeyboardAvoidingView>
     </Screen>

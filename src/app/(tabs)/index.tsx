@@ -5,6 +5,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { GAMES, type AgeBand } from '@/domain/games/catalog';
 import { earnedStickers, nextSticker, unlockedDecorations } from '@/domain/rewards/rewards';
 import { useActiveProfile } from '@/data/progressStore';
+import { issueParentPass } from '@/data/parentGate';
 import { AvatarView } from '@/ui/components/AvatarView';
 import { ParentalGate } from '@/ui/components/ParentalGate';
 import { Pressy } from '@/ui/components/Pressy';
@@ -84,7 +85,7 @@ export default function Home() {
           </View>
         ))}
       </ScrollView>
-      <ParentalGate visible={gate} onCancel={() => setGate(false)} onPass={() => { setGate(false); router.push('/settings'); }} />
+      <ParentalGate visible={gate} onCancel={() => setGate(false)} onPass={() => { setGate(false); issueParentPass(); router.push('/settings'); }} />
     </Screen>
   );
 }

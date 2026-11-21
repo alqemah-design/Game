@@ -141,3 +141,53 @@ export function importLegacy(p: Profile, legacy: Record<string, unknown>): Profi
     bestStreak: Math.max(p.bestStreak, num('best_streak')),
   };
 }
+
+// ── Loading persisted data safely ────────────────────────────────────────
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const num = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : d);
+const KNOWN_GAMES = new Set<string>(GAMES.map((g) => g.id));
+
+/**
+ * Repairs a profile loaded from disk: fills fields added in later versions, drops unknown games
+ * and invalid numbers. A damaged or older save never crashes the app or loses valid progress.
+ */
+export function normalizeProfile(raw: unknown): Profile | null {
+  if (!isObj(raw) || typeof raw.id !== 'string' || !raw.id) return null;
+  const base = createProfile(raw.id, typeof raw.name === 'string' ? raw.name : '', num(raw.createdAt, Date.now()));
+  const games: Profile['games'] = {};
+  if (isObj(raw.games)) {
+    for (const [k, g] of Object.entries(raw.games)) {
+      if (!KNOWN_GAMES.has(k) || !isObj(g)) continue;
+      const e = emptyGameProgress();
+      games[k as GameId] = {
+        level: Math.max(1, Math.floor(num(g.level, 1))), completed: Math.floor(num(g.completed)),
+        plays: num(g.plays), correct: num(g.correct), mistakes: num(g.mistakes), lastPlayedAt: num(g.lastPlayedAt, e.lastPlayedAt),
+      };
+    }
+  }
+  const s = isObj(raw.settings) ? raw.settings : {};
+  const math = isObj(s.math) ? s.math : {};
+  const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+  return {
+    ...base,
+    avatar: isObj(raw.avatar) ? { ...base.avatar, ...(raw.avatar as Partial<Avatar>) } : base.avatar,
+    points: num(raw.points), stars: num(raw.stars), currentStreak: num(raw.currentStreak), bestStreak: num(raw.bestStreak),
+    games,
+    achievements: strings(raw.achievements),
+    seenStickers: Array.isArray(raw.seenStickers) ? raw.seenStickers.filter((x): x is number => typeof x === 'number') : [],
+    artworks: Array.isArray(raw.artworks) ? (raw.artworks.filter((a) => isObj(a) && typeof a.id === 'string' && typeof a.pageId === 'string') as Artwork[]) : [],
+    activity: isObj(raw.activity) ? (raw.activity as Profile['activity']) : {},
+    settings: {
+      ...DEFAULT_PROFILE_SETTINGS,
+      ...(s as Partial<ProfileSettings>),
+      math: { ...DEFAULT_PROFILE_SETTINGS.math, ...(math as Partial<ProfileSettings['math']>) },
+      focusLetters: strings(s.focusLetters),
+    },
+  };
+}
+
+export function normalizeProfiles(raw: unknown): Record<string, Profile> {
+  const out: Record<string, Profile> = {};
+  if (isObj(raw)) for (const v of Object.values(raw)) { const p = normalizeProfile(v); if (p) out[p.id] = p; }
+  return out;
+}

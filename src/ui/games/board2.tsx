@@ -26,7 +26,12 @@ export function TicTacToeGame({ api }: { api: GameApi }) {
   const [thinking, setThinking] = useState(robotStarts);
   // The robot gets stronger with level (difficulty setting already folded into genLevel).
   const ai: Difficulty = api.genLevel <= 2 ? 'easy' : api.genLevel <= 5 ? 'normal' : 'hard';
+  const aiTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(aiTimer.current), []);
   const result = winner(board);
+  // A stable value for the effect: `winner()` returns a new object every render, which previously
+  // re-ran the effect after each render and reported a loss hundreds of times per second.
+  const outcome = result === null ? null : result === 'draw' ? 'draw' : result.player;
 
   useEffect(() => {
     if (robotStarts && board.every((c) => !c)) {
@@ -36,11 +41,13 @@ export function TicTacToeGame({ api }: { api: GameApi }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!result) return;
-    if (result === 'draw') setTimeout(() => api.correct(Math.ceil(api.basePoints / 2)), 900);
-    else if (result.player === 'X') setTimeout(() => api.correct(), 900);
-    else { api.wrong(); setTimeout(api.restartRound, 1400); }
-  }, [result]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!outcome) return;
+    let id: ReturnType<typeof setTimeout>;
+    if (outcome === 'draw') id = setTimeout(() => api.correct(Math.ceil(api.basePoints / 2)), 900);
+    else if (outcome === 'X') id = setTimeout(() => api.correct(), 900);
+    else { api.wrong(); id = setTimeout(api.restartRound, 1400); }
+    return () => clearTimeout(id);
+  }, [outcome]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tap = (i: number) => {
     if (board[i] || result || thinking) return;
@@ -49,7 +56,7 @@ export function TicTacToeGame({ api }: { api: GameApi }) {
     setBoard(b);
     if (winner(b)) return;
     setThinking(true);
-    setTimeout(() => {
+    aiTimer.current = setTimeout(() => {
       const m = aiMove(b, 'O', ai, api.rng);
       const n = b.slice(); n[m] = 'O';
       setBoard(n); setThinking(false);
@@ -82,8 +89,17 @@ export function MazeGame({ api }: { api: GameApi }) {
   const [steps, setSteps] = useState(0);
   const [trail, setTrail] = useState<Set<number>>(new Set([maze.start[0] * maze.size + maze.start[1]]));
   const [w, setW] = useState(0);
+  const [boxH, setBoxH] = useState(0);
   const won = useRef(false);
   const cell = w / maze.size;
+  // Static layer: drawn once per maze/size, not on every step (up to 361 cells at 19×19).
+  const walls = useMemo(() => (
+    <View style={{ position: 'absolute', left: 0, top: 0, width: w, height: w, backgroundColor: t.card }}>
+      {maze.walls.flatMap((row, r) => row.map((wall, c) => wall && (
+        <View key={r * maze.size + c} style={{ position: 'absolute', left: c * cell, top: r * cell, width: cell + 0.5, height: cell + 0.5, backgroundColor: t.primary }} />
+      )))}
+    </View>
+  ), [maze, w, cell, t.card, t.primary]);
 
   const move = (d: [number, number]) => {
     if (won.current) return;
@@ -114,15 +130,15 @@ export function MazeGame({ api }: { api: GameApi }) {
   }));
 
   return (
-    <View style={{ flex: 1, padding: 16, alignItems: 'center' }}>
+    <View style={{ flex: 1, padding: 16, alignItems: 'center' }} onLayout={(e) => setBoxH(e.nativeEvent.layout.height)}>
       <Prompt>{`اسحب أو استخدم الأسهم • الخطوات: ${steps}`}</Prompt>
       <GestureDetector gesture={swipe}>
-        <View style={{ width: '100%', aspectRatio: 1, maxWidth: 520 }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
-          {w > 0 && maze.walls.map((row, r) => row.map((wall, c) => {
-            const k = r * maze.size + c;
-            return <View key={k} style={{ position: 'absolute', left: c * cell, top: r * cell, width: cell + 0.5, height: cell + 0.5,
-              backgroundColor: wall ? t.primary : trail.has(k) ? t.hintBg : t.card }} />;
-          }))}
+        {/* Square board that leaves room for the arrow pad (~300pt) on short screens. */}
+        <View style={{ width: '100%', aspectRatio: 1, maxWidth: boxH ? Math.max(160, Math.min(520, boxH - 300)) : 520 }} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+          {w > 0 && walls}
+          {w > 0 && [...trail].map((k) => (
+            <View key={k} style={{ position: 'absolute', left: (k % maze.size) * cell, top: Math.floor(k / maze.size) * cell, width: cell + 0.5, height: cell + 0.5, backgroundColor: t.hintBg }} />
+          ))}
           {w > 0 && <Text style={{ position: 'absolute', left: maze.goal[1] * cell, top: maze.goal[0] * cell, width: cell, fontSize: cell * 0.75, textAlign: 'center' }}>🌸</Text>}
           {w > 0 && <Animated.Text style={[{ position: 'absolute', left: 0, top: 0, width: cell, fontSize: cell * 0.75, textAlign: 'center' }, bee]}>🐝</Animated.Text>}
         </View>
@@ -163,6 +179,7 @@ export function NumberMemoryGame({ api }: { api: GameApi }) {
   }, [phase, showMs, api.hint]);
 
   const submit = () => {
+    if (phase !== 'input' || shake) return;
     if (input === seq) return api.correct();
     api.wrong(); setShake(true);
     setTimeout(() => { setShake(false); setInput(''); setPhase('show'); }, 700);
@@ -218,6 +235,8 @@ export function ColorSequenceGame({ api }: { api: GameApi }) {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const show = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
     setPhase('watch'); setPos(0);
     const ms = api.hint ? stepMs * 1.4 : stepMs;
     sequence.forEach((c, i) => {
@@ -230,9 +249,14 @@ export function ColorSequenceGame({ api }: { api: GameApi }) {
   const tap = (c: number) => {
     if (phase !== 'input') return;
     setLit(c); setTimeout(() => setLit(-1), 200);
-    if (c !== sequence[pos]) { api.wrong(); setTimeout(show, 900); return; }
+    if (c !== sequence[pos]) {
+      api.wrong();
+      setPhase('watch'); // stop further taps until the replay starts
+      timers.current.push(setTimeout(show, 900));
+      return;
+    }
     play('tap');
-    if (pos + 1 === sequence.length) { setPhase('ready'); setTimeout(() => api.correct(), 400); }
+    if (pos + 1 === sequence.length) { setPhase('watch'); timers.current.push(setTimeout(() => api.correct(), 400)); }
     else setPos(pos + 1);
   };
 
@@ -251,8 +275,8 @@ export function ColorSequenceGame({ api }: { api: GameApi }) {
 const styles = StyleSheet.create({
   ttt: { width: '100%', maxWidth: 360, aspectRatio: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 6, padding: 6, borderRadius: radius.lg },
   tttCell: { width: '31.9%', aspectRatio: 1, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  pad: { alignItems: 'center', gap: 8, marginTop: 16 },
-  arrow: { width: 68, height: 68, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  pad: { alignItems: 'center', gap: 6, marginTop: 12 },
+  arrow: { width: 64, height: 64, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   display: { minWidth: '80%', minHeight: 100, borderRadius: radius.lg, borderWidth: 3, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, marginVertical: 16 },
   numpad: { flexDirection: 'row', flexWrap: 'wrap', width: 300, gap: 12, justifyContent: 'center' },
   key: { width: 88, height: 68, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },

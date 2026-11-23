@@ -5,6 +5,7 @@ import * as C from './choice';
 import * as B1 from './board1';
 import * as B2 from './board2';
 import { ArabicLettersScreen } from './ArabicLetters';
+import * as NG from './newGames';
 
 type Render = (api: GameApi) => ReactNode;
 
@@ -29,4 +30,8 @@ export const GAME_BOARDS: Partial<Record<GameId, Render>> = {
   maze: (api) => <B2.MazeGame key={api.roundKey} api={api} />,
   numberMemory: (api) => <B2.NumberMemoryGame key={api.roundKey} api={api} />,
   colorSequence: (api) => <B2.ColorSequenceGame key={api.roundKey} api={api} />,
+  market: (api) => <NG.MarketGame key={api.roundKey} api={api} />,
+  whatChanged: (api) => <NG.WhatChangedGame key={api.roundKey} api={api} />,
+  mirror: (api) => <NG.MirrorGame key={api.roundKey} api={api} />,
+  recycling: (api) => <NG.RecyclingGame api={api} />,
 };

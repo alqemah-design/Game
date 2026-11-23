@@ -93,10 +93,10 @@ describe('specific rules', () => {
     expect(winner(full)).toBe('draw');
   });
 
-  it('catalog has 17 games with unique ids and legacy keys', () => {
-    expect(GAMES.length).toBe(17);
-    expect(new Set(GAMES.map((g) => g.id)).size).toBe(17);
-    expect(new Set(GAMES.map((g) => g.legacyKey)).size).toBe(17);
+  it('catalog has 21 games with unique ids and legacy keys', () => {
+    expect(GAMES.length).toBe(21);
+    expect(new Set(GAMES.map((g) => g.id)).size).toBe(21);
+    expect(new Set(GAMES.map((g) => g.legacyKey)).size).toBe(21);
   });
 });
 

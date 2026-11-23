@@ -85,7 +85,7 @@ function ChoiceRoundView<P, O>({ api, generate, renderPrompt, renderOption, colu
   );
 }
 
-function OptionTile({ state, children, onPress, width, height }: { state: OptionState; children: ReactNode; onPress: () => void; width: `${number}%`; height: number }) {
+export function OptionTile({ state, children, onPress, width, height }: { state: OptionState; children: ReactNode; onPress: () => void; width: `${number}%`; height: number }) {
   const t = useTheme();
   const x = useSharedValue(0);
   const pulse = useSharedValue(1);

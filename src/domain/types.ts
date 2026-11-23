@@ -15,7 +15,11 @@ export type GameId =
   | 'maze'
   | 'numberMemory'
   | 'colorSequence'
-  | 'arabicLetters';
+  | 'arabicLetters'
+  | 'market'
+  | 'whatChanged'
+  | 'mirror'
+  | 'recycling';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
 export type MathOp = '+' | '-' | '×';

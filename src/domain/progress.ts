@@ -1,5 +1,5 @@
 /** Child profile + the pure rules that update it. Storage lives in src/data, not here. */
-import { DEFAULT_AVATAR, type Avatar } from './rewards/avatar';
+import { DEFAULT_AVATAR, normalizeAvatar, type Avatar } from './rewards/avatar';
 import { STICKERS, newAchievements, type Achievement, type Sticker } from './rewards/rewards';
 import { GAMES } from './games/catalog';
 import { DEFAULT_GAME_SETTINGS, type GameId, type GameSettings } from './types';
@@ -170,7 +170,7 @@ export function normalizeProfile(raw: unknown): Profile | null {
   const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
   return {
     ...base,
-    avatar: isObj(raw.avatar) ? { ...base.avatar, ...(raw.avatar as Partial<Avatar>) } : base.avatar,
+    avatar: normalizeAvatar(raw.avatar),
     points: num(raw.points), stars: num(raw.stars), currentStreak: num(raw.currentStreak), bestStreak: num(raw.bestStreak),
     games,
     achievements: strings(raw.achievements),

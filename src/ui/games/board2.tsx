@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
+import Svg, { Circle, Path } from 'react-native-svg';
 import Animated, { ZoomIn, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as B from '@/domain/games/boardGames';
 import { aiMove, winner, type Board } from '@/domain/games/ticTacToe';
@@ -18,6 +19,17 @@ function Prompt({ children }: { children: string }) {
 }
 
 // ── Tic-tac-toe vs Minimax ───────────────────────────────────────────────
+/** X and O drawn as shapes with the same box and stroke, so they look equal on every device font. */
+function Mark({ player }: { player: 'X' | 'O' }) {
+  return (
+    <Svg width="100%" height="100%" viewBox="0 0 100 100">
+      {player === 'X'
+        ? <Path d="M18 18 L82 82 M82 18 L18 82" stroke="#EF4444" strokeWidth={14} strokeLinecap="round" />
+        : <Circle cx={50} cy={50} r={34} stroke="#3B82F6" strokeWidth={14} fill="none" />}
+    </Svg>
+  );
+}
+
 export function TicTacToeGame({ api }: { api: GameApi }) {
   const t = useTheme();
   const [board, setBoard] = useState<Board>(Array(9).fill(null));
@@ -70,9 +82,9 @@ export function TicTacToeGame({ api }: { api: GameApi }) {
       <Prompt>{msg}</Prompt>
       <View style={[styles.ttt, { backgroundColor: t.border }]}>
         {board.map((c, i) => (
-          <Pressy key={i} sound={false} onPress={() => tap(i)} accessibilityLabel={c ?? 'خانة فارغة'}
+          <Pressy key={i} sound={false} onPress={() => tap(i)} accessibilityLabel={c === 'X' ? 'إكس' : c === 'O' ? 'أو' : 'خانة فارغة'}
             style={[styles.tttCell, { backgroundColor: line.includes(i) ? t.successBg : t.card }]}>
-            {c && <Animated.Text entering={ZoomIn} style={{ fontSize: 64, fontWeight: '900', color: c === 'X' ? '#EF4444' : '#3B82F6' }}>{c === 'X' ? '✕' : '◯'}</Animated.Text>}
+            {c && <Animated.View entering={ZoomIn} style={{ width: '62%', aspectRatio: 1 }}><Mark player={c} /></Animated.View>}
           </Pressy>
         ))}
       </View>

@@ -17,6 +17,8 @@ const light = {
   border: '#EADFC8',
   overlay: 'rgba(30,20,50,0.55)',
   shadow: '#000000',
+  /** Darker lower edge that makes tiles look raised. */
+  edge: '#E2CFA8',
 };
 
 const dark: typeof light = {
@@ -35,6 +37,7 @@ const dark: typeof light = {
   border: '#3B3B66',
   overlay: 'rgba(0,0,0,0.65)',
   shadow: '#000000',
+  edge: '#15152B',
 };
 
 export type Theme = typeof light;
@@ -56,3 +59,19 @@ export const font = {
   body: { fontSize: 18, fontWeight: '600' as const },
   small: { fontSize: 14, fontWeight: '600' as const },
 };
+
+/** A chunky, toy-like raised tile: light rim, thick darker bottom edge, soft drop shadow. */
+export function raised(t: Theme, bg: string = t.card, edge: string = t.edge) {
+  return {
+    backgroundColor: bg,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.6)',
+    borderBottomWidth: 6,
+    borderBottomColor: edge,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  } as const;
+}

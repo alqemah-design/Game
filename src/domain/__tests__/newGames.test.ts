@@ -26,25 +26,28 @@ describe('little market', () => {
   });
 });
 
-describe('what changed', () => {
-  it('describes exactly one change', () => {
+describe('what changed (room)', () => {
+  it('describes exactly one change, with things only where they belong', () => {
     each((l, seed) => {
       const r = N.changedRound(l, createRng(seed));
+      expect(r.before.length).toBe(N.ROOM_SPOTS.length);
+      for (const scene of [r.before, r.after])
+        scene.forEach((e, i) => e && expect(N.ROOM_ITEMS.find((it) => it.emoji === e)!.kinds).toContain(N.ROOM_SPOTS[i]));
+      const filled = r.before.filter(Boolean);
+      expect(new Set(filled).size).toBe(filled.length);
       const diff = r.before.map((b, i) => (b !== r.after[i] ? i : -1)).filter((i) => i >= 0);
       if (r.kind === 'missing') {
-        expect(diff.length).toBe(1);
+        expect(diff).toEqual(r.answerCells);
         expect(r.after[diff[0]]).toBe('');
         expect(r.options[r.correctIndex]).toBe(r.before[diff[0]]);
-        // distractors were never in the scene
         r.options.forEach((o, i) => i !== r.correctIndex && expect(r.before).not.toContain(o));
       } else if (r.kind === 'new') {
         expect(diff).toEqual(r.answerCells);
         expect(r.before).not.toContain(r.after[diff[0]]);
       } else {
         expect(diff.sort()).toEqual([...r.answerCells].sort());
-        expect([...r.after].sort()).toEqual([...r.before].sort());
       }
-      expect(l <= 3 ? r.kind : 'missing').toBe('missing');
+      if (l <= 3) expect(r.kind).toBe('missing');
     });
   });
 });
@@ -74,7 +77,9 @@ describe('waste sorting', () => {
       expect(r.options[r.correctIndex]).toBe(r.prompt.item.bin);
     });
   });
-  it('every bin has items', () => {
-    for (const b of Object.keys(N.BINS)) expect(N.WASTE.filter((w) => w.bin === b).length).toBeGreaterThanOrEqual(3);
+  it('every bin has items, and the four bins are paper, plastic, food and other', () => {
+    expect(Object.keys(N.BINS).sort()).toEqual(['food', 'other', 'paper', 'plastic']);
+    for (const b of Object.keys(N.BINS)) expect(N.WASTE.filter((w) => w.bin === b).length).toBeGreaterThanOrEqual(5);
+    expect(N.binsFor(9)).toHaveLength(4);
   });
 });

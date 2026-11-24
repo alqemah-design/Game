@@ -14,7 +14,8 @@ import { stopSpeaking } from '@/audio/speech';
 import { Pressy } from './Pressy';
 import { Screen } from './Screen';
 import { SuccessModal } from './SuccessModal';
-import { font, radius, useTheme } from '../theme/theme';
+import { font, radius, raised, useTheme } from '../theme/theme';
+import Svg, { Path } from 'react-native-svg';
 
 export type GameApi = {
   /** Level number the child sees. */
@@ -38,7 +39,7 @@ export type GameApi = {
 
 const NO_EVENTS: ProgressEvents = { achievements: [], stickers: [] };
 /** Boards driven by swipe gestures size themselves to the screen instead of scrolling. */
-const NO_SCROLL = new Set<GameId>(['maze']);
+const NO_SCROLL = new Set<GameId>(['maze', 'recycling']);
 
 /**
  * Every game renders inside this shell. It owns the level/round loop, scoring, saving and the
@@ -92,16 +93,16 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
   };
 
   return (
-    <Screen>
+    <Screen scenery={meta.color}>
       <View style={styles.header}>
-        <Pressy accessibilityRole="button" accessibilityLabel="رجوع" onPress={goBack} style={[styles.iconBtn, { backgroundColor: t.card }]}>
+        <Pressy accessibilityRole="button" accessibilityLabel="رجوع" onPress={goBack} style={[styles.iconBtn, raised(t)]}>
           <Text style={{ fontSize: 26 }}>→</Text>
         </Pressy>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={[font.h2, { color: t.text }]} numberOfLines={1}>{meta.title}</Text>
           <Text style={[font.small, { color: t.textMuted }]}>المستوى {s.level}</Text>
         </View>
-        <View style={[styles.score, { backgroundColor: t.card }]}>
+        <View style={[styles.score, raised(t)]}>
           <Text style={[font.body, { color: t.text }]}>⭐ {profile?.stars ?? 0}</Text>
         </View>
       </View>
@@ -129,9 +130,17 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
   );
 }
 
-function Dot({ filled, color, track }: { filled: boolean; color: string; track: string }) {
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: withSpring(filled ? 1.15 : 1) }] }));
-  return <Animated.View style={[styles.dot, { backgroundColor: filled ? color : track }, style]} />;
+/** One star per round: grey until the round is done, then gold with a little pop. */
+function Dot({ filled, track }: { filled: boolean; color: string; track: string }) {
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: withSpring(filled ? 1.2 : 1) }] }));
+  return (
+    <Animated.View style={style}>
+      <Svg width={22} height={22} viewBox="0 0 100 100">
+        <Path d="M50 4 L62.5 36 L96 37.5 L69.5 58.5 L79 91 L50 72 L21 91 L30.5 58.5 L4 37.5 L37.5 36 Z"
+          fill={filled ? '#FACC15' : track} stroke={filled ? '#B45309' : 'rgba(0,0,0,0.15)'} strokeWidth={6} strokeLinejoin="round" />
+      </Svg>
+    </Animated.View>
+  );
 }
 
 function RoundDots({ total, done, color, track }: { total: number; done: number; color: string; track: string }) {
@@ -146,6 +155,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, gap: 12 },
   iconBtn: { width: 52, height: 52, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   score: { borderRadius: radius.pill, paddingHorizontal: 14, height: 44, justifyContent: 'center' },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 12, flexWrap: 'wrap', paddingHorizontal: 24 },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: 12, flexWrap: 'wrap', paddingHorizontal: 24 },
   dot: { width: 14, height: 14, borderRadius: 7 },
 });

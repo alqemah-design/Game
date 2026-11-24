@@ -33,5 +33,5 @@ export const GAME_BOARDS: Partial<Record<GameId, Render>> = {
   market: (api) => <NG.MarketGame key={api.roundKey} api={api} />,
   whatChanged: (api) => <NG.WhatChangedGame key={api.roundKey} api={api} />,
   mirror: (api) => <NG.MirrorGame key={api.roundKey} api={api} />,
-  recycling: (api) => <NG.RecyclingGame api={api} />,
+  recycling: (api) => <NG.RecyclingGame key={api.roundKey} api={api} />,
 };

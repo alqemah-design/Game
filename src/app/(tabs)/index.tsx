@@ -33,7 +33,7 @@ export default function Home() {
   const decorations = unlockedDecorations(p.achievements);
 
   return (
-    <Screen>
+    <Screen scenery="#86EFAC">
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         <View style={styles.header}>
           <Pressy onPress={() => router.push('/avatar')} accessibilityLabel="تعديل الشخصية" style={[styles.avatar, { backgroundColor: t.cardAlt }]}>
@@ -73,8 +73,11 @@ export default function Home() {
                       accessibilityLabel={`${g.title}، المستوى ${level}`}
                       style={[styles.card, { backgroundColor: g.color }]}
                     >
-                      <Text style={styles.cardEmoji}>{g.emoji}</Text>
-                      <Text style={styles.cardTitle} numberOfLines={1}>{g.title}</Text>
+                      <View pointerEvents="none" style={styles.bubbleBig} />
+                      <View pointerEvents="none" style={styles.bubbleSmall} />
+                      <View pointerEvents="none" style={styles.shine} />
+                      <View style={styles.badge}><Text style={styles.cardEmoji}>{g.emoji}</Text></View>
+                      <Text style={styles.cardTitle} numberOfLines={2}>{g.title}</Text>
                       <Text style={styles.cardSub} numberOfLines={1}>{g.subtitle}</Text>
                       {g.id !== 'coloring' && <View style={styles.levelPill}><Text style={styles.levelText}>المستوى {level}</Text></View>}
                     </Pressy>
@@ -99,9 +102,20 @@ const styles = StyleSheet.create({
   bar: { height: 12, borderRadius: 6, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 6 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
-  card: { borderRadius: radius.lg, padding: 14, minHeight: 150, justifyContent: 'space-between', borderBottomWidth: 5, borderBottomColor: 'rgba(0,0,0,0.15)' },
-  cardEmoji: { fontSize: 40, fontWeight: '900', color: '#FFF' },
-  cardTitle: { fontSize: 18, fontWeight: '800', color: '#FFF' },
+  card: {
+    borderRadius: radius.lg, padding: 14, minHeight: 156, justifyContent: 'space-between', overflow: 'hidden',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.45)', borderBottomWidth: 7, borderBottomColor: 'rgba(0,0,0,0.22)',
+    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 5 }, elevation: 5,
+  },
+  badge: {
+    width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.92)',
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4, shadowOffset: { width: 0, height: 3 }, elevation: 3,
+  },
+  bubbleBig: { position: 'absolute', width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.14)', top: -40, left: -36 },
+  bubbleSmall: { position: 'absolute', width: 54, height: 54, borderRadius: 27, backgroundColor: 'rgba(255,255,255,0.12)', bottom: -14, left: 30 },
+  shine: { position: 'absolute', top: 0, left: 0, right: 0, height: '45%', backgroundColor: 'rgba(255,255,255,0.12)' },
+  cardEmoji: { fontSize: 36, fontWeight: '900', color: '#4C1D95' },
+  cardTitle: { fontSize: 16, lineHeight: 21, fontWeight: '800', color: '#FFF', textShadowColor: 'rgba(0,0,0,0.25)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
   cardSub: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.9)' },
   levelPill: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 3, marginTop: 6 },
   levelText: { fontSize: 12, fontWeight: '800', color: '#FFF' },

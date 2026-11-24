@@ -43,52 +43,96 @@ export function greedyPay(amount: number, money: readonly number[]): number[] {
   return left === 0 ? out : [];
 }
 
-// ── What changed? ────────────────────────────────────────────────────────
-const SCENE_POOL = ['🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐸', '🦁', '🐵', '🐧', '🐢', '🦋', '🍎', '🍌', '🍓', '🚗', '🚀', '⚽', '🎈', '⭐', '🌸', '🍄', '🎁', '🔔'];
+// ── What changed? (a room) ───────────────────────────────────────────────
+/** Places in the room where things can sit. The UI maps each index to a position in the 3D room. */
+export type SpotKind = 'wall' | 'surface' | 'floor';
+export const ROOM_SPOTS: readonly SpotKind[] = [
+  'surface', 'surface', 'surface', // shelf
+  'wall', 'wall', // side walls
+  'surface', 'surface', // table
+  'floor', 'floor', 'floor', 'floor', 'floor',
+];
+
+export type RoomItem = { emoji: string; ar: string; kinds: SpotKind[] };
+export const ROOM_ITEMS: readonly RoomItem[] = [
+  { emoji: '📚', ar: 'كتب', kinds: ['surface'] }, { emoji: '⏰', ar: 'منبّه', kinds: ['surface'] },
+  { emoji: '☕', ar: 'كوب', kinds: ['surface'] }, { emoji: '🍎', ar: 'تفاحة', kinds: ['surface'] },
+  { emoji: '🤖', ar: 'روبوت', kinds: ['surface', 'floor'] }, { emoji: '🦆', ar: 'بطة', kinds: ['surface'] },
+  { emoji: '🎲', ar: 'نرد', kinds: ['surface'] }, { emoji: '🎁', ar: 'هدية', kinds: ['surface', 'floor'] },
+  { emoji: '🧩', ar: 'بازل', kinds: ['surface'] }, { emoji: '📻', ar: 'راديو', kinds: ['surface'] },
+  { emoji: '🖍️', ar: 'ألوان', kinds: ['surface'] }, { emoji: '🏆', ar: 'كأس', kinds: ['surface'] },
+  { emoji: '🖼️', ar: 'لوحة', kinds: ['wall'] }, { emoji: '🪞', ar: 'مرآة', kinds: ['wall'] },
+  { emoji: '🗓️', ar: 'تقويم', kinds: ['wall'] }, { emoji: '🎯', ar: 'لوحة سهام', kinds: ['wall'] },
+  { emoji: '🪁', ar: 'طائرة ورقية', kinds: ['wall'] }, { emoji: '🏅', ar: 'ميدالية', kinds: ['wall'] },
+  { emoji: '⚽', ar: 'كرة', kinds: ['floor'] }, { emoji: '🏀', ar: 'كرة سلة', kinds: ['floor'] },
+  { emoji: '🎒', ar: 'حقيبة', kinds: ['floor'] }, { emoji: '👟', ar: 'حذاء', kinds: ['floor'] },
+  { emoji: '🚂', ar: 'قطار', kinds: ['floor'] }, { emoji: '🛹', ar: 'لوح تزلج', kinds: ['floor'] },
+  { emoji: '🧸', ar: 'دبدوب', kinds: ['floor', 'surface'] }, { emoji: '🪴', ar: 'نبتة', kinds: ['floor', 'surface'] },
+  { emoji: '🐈', ar: 'قطة', kinds: ['floor'] }, { emoji: '🥁', ar: 'طبل', kinds: ['floor'] },
+];
 
 export type ChangeKind = 'missing' | 'new' | 'swap';
 export type ChangedRound = {
+  /** One entry per ROOM_SPOTS index; '' = nothing there. */
   before: string[];
-  /** Empty string = the cell is now empty. */
   after: string[];
   kind: ChangeKind;
-  /** Cells to tap for 'new' / 'swap' (either one counts for swap). */
+  /** Spots to tap for 'new' / 'swap' (either one counts for swap). */
   answerCells: number[];
-  /** For 'missing': which item disappeared. */
+  /** For 'missing': which thing disappeared (and where it was, for the hint). */
   options: string[];
   correctIndex: number;
   studyMs: number;
-  columns: number;
 };
+
+const fits = (item: RoomItem, spot: number) => item.kinds.includes(ROOM_SPOTS[spot]);
 
 export function changedRound(level: number, rng: Rng): ChangedRound {
   const count = clamp(2 + level, 3, 9);
-  const kind: ChangeKind = level <= 3 ? 'missing' : level <= 6 ? (rng() < 0.5 ? 'missing' : 'new') : pick(rng, ['missing', 'new', 'swap'] as const);
-  const pool = shuffle(rng, SCENE_POOL);
-  const before = pool.slice(0, count);
-  const unused = pool.slice(count);
+  let kind: ChangeKind = level <= 3 ? 'missing' : level <= 6 ? (rng() < 0.5 ? 'missing' : 'new') : pick(rng, ['missing', 'new', 'swap'] as const);
+  // Fill `count` spots with distinct things that belong there (no ball on the wall).
+  const spots = sample(rng, ROOM_SPOTS.map((_, i) => i), count);
+  const used = new Set<string>();
+  const before: string[] = ROOM_SPOTS.map(() => '');
+  for (const sp of spots) {
+    const item = shuffle(rng, ROOM_ITEMS).find((it) => fits(it, sp) && !used.has(it.emoji))!;
+    used.add(item.emoji);
+    before[sp] = item.emoji;
+  }
   const after = before.slice();
+  const byEmoji = (e: string) => ROOM_ITEMS.find((it) => it.emoji === e)!;
   let answerCells: number[] = [];
   let options: string[] = [];
   let correctIndex = -1;
-  const i = int(rng, 0, count - 1);
+
+  if (kind === 'swap') {
+    const pairs: [number, number][] = [];
+    for (const a of spots) for (const b of spots) if (a < b && fits(byEmoji(before[a]), b) && fits(byEmoji(before[b]), a)) pairs.push([a, b]);
+    if (pairs.length) {
+      const [a, b] = pick(rng, pairs);
+      [after[a], after[b]] = [after[b], after[a]];
+      answerCells = [a, b];
+    } else kind = 'new';
+  }
+  if (kind === 'new') {
+    const sp = pick(rng, spots);
+    const fresh = shuffle(rng, ROOM_ITEMS).find((it) => fits(it, sp) && !used.has(it.emoji));
+    if (fresh) { after[sp] = fresh.emoji; answerCells = [sp]; } else kind = 'missing';
+  }
   if (kind === 'missing') {
-    after[i] = '';
-    // Distractors are things that were never in the scene, so the child must remember.
-    const r = withDistractors(rng, before[i], unused, count <= 4 ? 3 : 4);
+    const sp = pick(rng, spots);
+    after[sp] = '';
+    answerCells = [sp];
+    // Distractors were never in the room, so the child has to remember.
+    const unused = ROOM_ITEMS.map((it) => it.emoji).filter((e) => !used.has(e));
+    const r = withDistractors(rng, before[sp], unused, count <= 4 ? 3 : 4);
     options = r.options;
     correctIndex = r.correctIndex;
-  } else if (kind === 'new') {
-    after[i] = unused[0];
-    answerCells = [i];
-  } else {
-    let j = int(rng, 0, count - 2);
-    if (j >= i) j++;
-    [after[i], after[j]] = [after[j], after[i]];
-    answerCells = [i, j];
   }
-  return { before, after, kind, answerCells, options, correctIndex, studyMs: 2000 + count * 450, columns: count <= 4 ? 2 : 3 };
+  return { before, after, kind, answerCells, options, correctIndex, studyMs: 2500 + count * 500 };
 }
+
+export const roomItemName = (emoji: string) => ROOM_ITEMS.find((it) => it.emoji === emoji)?.ar ?? '';
 
 // ── Mirror ───────────────────────────────────────────────────────────────
 export type MirrorRound = {
@@ -122,13 +166,12 @@ export function mirrorRound(level: number, rng: Rng): MirrorRound {
 }
 
 // ── Waste sorting ────────────────────────────────────────────────────────
-export type Bin = 'food' | 'paper' | 'plastic' | 'glass' | 'metal';
-export const BINS: Record<Bin, { ar: string; emoji: string; color: string }> = {
-  food: { ar: 'طعام', emoji: '🍂', color: '#92400E' },
-  paper: { ar: 'ورق', emoji: '📄', color: '#2563EB' },
-  plastic: { ar: 'بلاستيك', emoji: '🧴', color: '#EAB308' },
-  glass: { ar: 'زجاج', emoji: '🫙', color: '#16A34A' },
-  metal: { ar: 'معادن', emoji: '🥫', color: '#6B7280' },
+export type Bin = 'paper' | 'plastic' | 'food' | 'other';
+export const BINS: Record<Bin, { ar: string; color: string; dark: string; light: string; icon: string }> = {
+  paper: { ar: 'ورق', color: '#2563EB', dark: '#1E3A8A', light: '#60A5FA', icon: '📄' },
+  plastic: { ar: 'بلاستيك', color: '#EAB308', dark: '#A16207', light: '#FDE047', icon: '🧴' },
+  food: { ar: 'طعام', color: '#16A34A', dark: '#14532D', light: '#4ADE80', icon: '🍎' },
+  other: { ar: 'مخلفات أخرى', color: '#4B5563', dark: '#1F2937', light: '#9CA3AF', icon: '🗑️' },
 };
 export type WasteItem = { emoji: string; ar: string; bin: Bin };
 export const WASTE: readonly WasteItem[] = [
@@ -138,13 +181,13 @@ export const WASTE: readonly WasteItem[] = [
   { emoji: '✉️', ar: 'ظرف', bin: 'paper' }, { emoji: '🗞️', ar: 'مجلة', bin: 'paper' },
   { emoji: '🧴', ar: 'علبة شامبو', bin: 'plastic' }, { emoji: '🥤', ar: 'كوب بلاستيك', bin: 'plastic' }, { emoji: '🍼', ar: 'رضّاعة', bin: 'plastic' },
   { emoji: '🪣', ar: 'دلو', bin: 'plastic' }, { emoji: '🛍️', ar: 'كيس', bin: 'plastic' },
-  { emoji: '🫙', ar: 'مرطبان', bin: 'glass' }, { emoji: '🍾', ar: 'زجاجة', bin: 'glass' }, { emoji: '🥛', ar: 'كوب زجاج', bin: 'glass' },
-  { emoji: '🥫', ar: 'علبة معلبات', bin: 'metal' }, { emoji: '🔩', ar: 'مسمار', bin: 'metal' }, { emoji: '📎', ar: 'مشبك ورق', bin: 'metal' },
+  { emoji: '🧽', ar: 'إسفنجة مستعملة', bin: 'other' }, { emoji: '🪥', ar: 'فرشاة أسنان قديمة', bin: 'other' },
+  { emoji: '🧦', ar: 'جورب ممزق', bin: 'other' }, { emoji: '🖍️', ar: 'قلم شمع مكسور', bin: 'other' }, { emoji: '🩹', ar: 'لاصق مستعمل', bin: 'other' },
 ];
 
-/** Bins in use at a level, in a fixed order (bins stay in place so the child learns where they are). */
+/** Bins in use at a level, in a fixed order (they stay in place so the child learns where they are). */
 export const binsFor = (level: number): Bin[] =>
-  tier([[1, ['food', 'paper']], [3, ['food', 'paper', 'plastic']], [5, ['food', 'paper', 'plastic', 'glass']], [7, ['food', 'paper', 'plastic', 'glass', 'metal']]] as const, level).slice();
+  tier([[1, ['food', 'paper']], [3, ['paper', 'plastic', 'food']], [5, ['paper', 'plastic', 'food', 'other']]] as const, level).slice();
 
 export function recyclingRound(level: number, _s: GameSettings, rng: Rng): ChoiceRound<{ item: WasteItem }, Bin> {
   const bins = binsFor(level);

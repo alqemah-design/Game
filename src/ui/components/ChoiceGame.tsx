@@ -8,7 +8,7 @@ import type { Rng } from '@/domain/rng';
 import { speak } from '@/audio/speech';
 import type { GameApi } from './GameShell';
 import { Pressy } from './Pressy';
-import { radius, TOUCH, useTheme } from '../theme/theme';
+import { radius, raised, TOUCH, useTheme } from '../theme/theme';
 
 export type OptionState = 'idle' | 'correct' | 'wrong' | 'hint';
 
@@ -96,7 +96,7 @@ export function OptionTile({ state, children, onPress, width, height }: { state:
   }, [state, x, pulse]);
   const anim = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }, { scale: pulse.value }] }));
   const bg = state === 'correct' ? t.successBg : state === 'hint' ? t.hintBg : t.card;
-  const border = state === 'correct' ? t.success : state === 'hint' ? t.hint : t.border;
+  const edge = state === 'correct' ? t.success : state === 'hint' ? t.hint : t.edge;
   return (
     <Animated.View style={[{ width, minHeight: Math.max(height, TOUCH) }, anim, state === 'wrong' && { opacity: 0.35 }]}>
       <Pressy
@@ -104,7 +104,7 @@ export function OptionTile({ state, children, onPress, width, height }: { state:
         onPress={onPress}
         disabled={state === 'wrong'}
         accessibilityRole="button"
-        style={[styles.tile, { backgroundColor: bg, borderColor: border, minHeight: Math.max(height, TOUCH) }]}
+        style={[styles.tile, raised(t, bg, edge), state !== 'idle' && { borderColor: edge }, { minHeight: Math.max(height, TOUCH) }]}
       >
         {children}
       </Pressy>
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, paddingHorizontal: 16 },
   prompt: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 160 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, paddingBottom: 16 },
-  tile: { flex: 1, borderRadius: radius.md, borderWidth: 3, alignItems: 'center', justifyContent: 'center', padding: 8 },
+  tile: { flex: 1, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', padding: 8 },
   timer: { height: 10, borderRadius: 5, overflow: 'hidden', marginBottom: 12 },
   timerFill: { height: '100%', borderRadius: 5 },
 });

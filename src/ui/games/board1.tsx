@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, ZoomIn, useAnimatedStyle, useSharedValue, withTiming, interpolate } from 'react-native-reanimated';
+import Svg, { Circle, Defs, LinearGradient, Path, Pattern, Rect, Stop } from 'react-native-svg';
 import * as B from '@/domain/games/boardGames';
 import { COLORS } from '@/domain/content/shapes';
 import { play } from '@/audio/sfx';
@@ -8,7 +9,7 @@ import { speak } from '@/audio/speech';
 import type { GameApi } from '../components/GameShell';
 import { Pressy } from '../components/Pressy';
 import { ShapeIcon } from '../components/ShapeIcon';
-import { font, radius, useTheme } from '../theme/theme';
+import { font, radius, raised, useTheme } from '../theme/theme';
 
 const PAIR_COLORS = ['#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F472B6', '#2DD4BF', '#FB923C'];
 
@@ -72,7 +73,7 @@ function LetterTile({ l, onPress, active, matched, sel, hint }: { l: string; onP
   const color = PAIR_COLORS[matched.indexOf(l.toUpperCase()) % PAIR_COLORS.length];
   return (
     <Pressy onPress={onPress} accessibilityLabel={l}
-      style={[styles.letter, { backgroundColor: done ? color : hinted ? t.hintBg : t.card, borderColor: active ? t.primary : t.border }]}>
+      style={[styles.letter, raised(t, done ? color : hinted ? t.hintBg : t.card), active && { borderColor: t.primary, borderWidth: 4, borderBottomWidth: 6 }]}>
       <Text style={{ fontSize: 40, fontWeight: '800', color: done ? '#FFF' : t.text }}>{l}</Text>
     </Pressy>
   );
@@ -106,6 +107,26 @@ export function CapitalSmallGame({ api }: { api: GameApi }) {
 }
 
 // ── Memory cards ─────────────────────────────────────────────────────────
+/** Playing-card back: purple gradient, star lattice and a centre medallion. */
+function CardBack({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size * 1.2} viewBox="0 0 100 120">
+      <Defs>
+        <LinearGradient id="cb-bg" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#A78BFA" /><Stop offset="1" stopColor="#5B21B6" /></LinearGradient>
+        <Pattern id="cb-pat" patternUnits="userSpaceOnUse" width="16" height="16">
+          <Path d="M8 2 L9.6 6.4 L14 8 L9.6 9.6 L8 14 L6.4 9.6 L2 8 L6.4 6.4 Z" fill="#FFFFFF" opacity={0.22} />
+        </Pattern>
+      </Defs>
+      <Rect x="0" y="0" width="100" height="120" rx="12" fill="url(#cb-bg)" />
+      <Rect x="0" y="0" width="100" height="120" rx="12" fill="url(#cb-pat)" />
+      <Rect x="6" y="6" width="88" height="108" rx="9" fill="none" stroke="#FFFFFF" strokeOpacity={0.7} strokeWidth="2.5" />
+      <Circle cx="50" cy="60" r="20" fill="#FDE047" stroke="#FFFFFF" strokeWidth="3" />
+      <Path d="M50 46 L53.5 55.5 L63 56 L55.5 62 L58 71 L50 66 L42 71 L44.5 62 L37 56 L46.5 55.5 Z" fill="#F59E0B" />
+      <Path d="M10 20 Q30 8 52 10" stroke="#FFFFFF" strokeWidth="4" strokeLinecap="round" opacity={0.35} fill="none" />
+    </Svg>
+  );
+}
+
 function Card({ symbol, up, done, onPress, size }: { symbol: string; up: boolean; done: boolean; onPress: () => void; size: number }) {
   const t = useTheme();
   const v = useSharedValue(0);
@@ -114,8 +135,8 @@ function Card({ symbol, up, done, onPress, size }: { symbol: string; up: boolean
   const back = useAnimatedStyle(() => ({ transform: [{ perspective: 600 }, { rotateY: `${interpolate(v.value, [0, 1], [0, 180])}deg` }], opacity: v.value > 0.5 ? 0 : 1 }));
   return (
     <Pressy sound={false} onPress={onPress} style={{ width: size, height: size * 1.2 }} accessibilityLabel={up || done ? symbol : 'بطاقة مقلوبة'}>
-      <Animated.View style={[styles.card, { backgroundColor: t.primary }, back]}><Text style={{ fontSize: size * 0.4 }}>❓</Text></Animated.View>
-      <Animated.View style={[styles.card, { backgroundColor: done ? t.successBg : t.card }, front]}><Text style={{ fontSize: size * 0.5 }}>{symbol}</Text></Animated.View>
+      <Animated.View style={[styles.card, styles.cardBack, back]}><CardBack size={size} /></Animated.View>
+      <Animated.View style={[styles.card, raised(t, done ? t.successBg : t.card), front]}><Text style={{ fontSize: size * 0.5 }}>{symbol}</Text></Animated.View>
     </Pressy>
   );
 }
@@ -210,12 +231,12 @@ export function WordBuilderGame({ api }: { api: GameApi }) {
       <View style={styles.tiles}>
         {tiles.map((l, i) => (
           <Pressy key={i} sound={false} onPress={() => tap(i)} disabled={picked.includes(i)}
-            style={[styles.tile, { backgroundColor: i === hintIndex ? t.hintBg : t.cardAlt, opacity: picked.includes(i) ? 0.25 : 1 }]}>
+            style={[styles.tile, raised(t, i === hintIndex ? t.hintBg : t.cardAlt), { opacity: picked.includes(i) ? 0.25 : 1 }]}>
             <Text style={{ fontSize: 32, fontWeight: '800', color: t.text }}>{l}</Text>
           </Pressy>
         ))}
       </View>
-      {picked.length > 0 && built !== word.word && <Pressy onPress={() => setPicked((p) => p.slice(0, -1))} style={[styles.undo, { backgroundColor: t.card }]}><Text style={[font.body, { color: t.text }]}>⌫</Text></Pressy>}
+      {picked.length > 0 && built !== word.word && <Pressy onPress={() => setPicked((p) => p.slice(0, -1))} style={[styles.undo, raised(t)]}><Text style={[font.body, { color: t.text }]}>⌫</Text></Pressy>}
     </View>
   );
 }
@@ -244,7 +265,7 @@ export function SortingGame({ api }: { api: GameApi }) {
       <View style={styles.tiles}>
         {nums.map((n) => !done.includes(n) && (
           <Pressy key={n} sound={false} onPress={() => tap(n)}
-            style={[styles.numTile, { width: big ? 96 : 76, height: big ? 96 : 76, backgroundColor: api.hint && n === sorted[done.length] ? t.hintBg : t.card, borderColor: t.border }]}>
+            style={[styles.numTile, raised(t, api.hint && n === sorted[done.length] ? t.hintBg : t.card), { width: big ? 96 : 76, height: big ? 96 : 76 }]}>
             <Text style={{ fontSize: big ? 36 : 28, fontWeight: '800', color: t.text }}>{n}</Text>
           </Pressy>
         ))}
@@ -260,6 +281,7 @@ export const styles = StyleSheet.create({
   col: { justifyContent: 'space-evenly', gap: 10 },
   letter: { width: 84, height: 72, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 3 },
   memGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  cardBack: { overflow: 'hidden', backgroundColor: 'transparent' },
   card: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' },
   slots: { flexDirection: 'row', gap: 8, marginVertical: 20, justifyContent: 'center' },
   slot: { width: 50, height: 60, borderRadius: 12, borderBottomWidth: 4, alignItems: 'center', justifyContent: 'center' },

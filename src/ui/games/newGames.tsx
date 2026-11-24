@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, ZoomIn, useAnimatedStyle, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, Text, View, type HostInstance } from 'react-native';
+import Animated, { FadeIn, ZoomIn, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import * as N from '@/domain/games/newGames';
 import { play } from '@/audio/sfx';
 import { speak } from '@/audio/speech';
-import { ChoiceGame, OptionTile, type OptionState } from '../components/ChoiceGame';
+import { OptionTile, type OptionState } from '../components/ChoiceGame';
 import type { GameApi } from '../components/GameShell';
 import { Pressy } from '../components/Pressy';
 import { BigButton } from '../components/BigButton';
 import { font, radius, useTheme } from '../theme/theme';
+import { RoomScene } from './room/RoomScene';
+import { WheelieBin } from './waste/WheelieBin';
+import { Awning, Money } from './market/Money';
 
 function Prompt({ children }: { children: string }) {
   const t = useTheme();
@@ -16,19 +20,6 @@ function Prompt({ children }: { children: string }) {
 }
 
 // ── Little market ────────────────────────────────────────────────────────
-function Money({ value, small }: { value: number; small?: boolean }) {
-  const note = value >= 10;
-  const s = small ? 0.62 : 1;
-  return (
-    <View style={[note ? styles.note : styles.coin, {
-      width: (note ? 78 : 56) * s, height: (note ? 46 : 56) * s,
-      backgroundColor: note ? (value >= 50 ? '#7C3AED' : value >= 20 ? '#0EA5E9' : '#22C55E') : value >= 5 ? '#F59E0B' : '#CBD5E1',
-    }]}>
-      <Text style={{ fontSize: 22 * s, fontWeight: '900', color: note ? '#FFF' : '#1F2937' }}>{value}</Text>
-    </View>
-  );
-}
-
 export function MarketGame({ api }: { api: GameApi }) {
   const t = useTheme();
   const [round] = useState(() => N.marketRound(api.genLevel, api.rng));
@@ -36,6 +27,7 @@ export function MarketGame({ api }: { api: GameApi }) {
   const [done, setDone] = useState(false);
   const [wrongOpts, setWrongOpts] = useState<number[]>([]);
   const [over, setOver] = useState(false);
+  const [shopW, setShopW] = useState(0);
   const total = tray.reduce((a, b) => a + b, 0);
 
   useEffect(() => {
@@ -57,11 +49,20 @@ export function MarketGame({ api }: { api: GameApi }) {
   };
 
   const header = (
-    <Animated.View entering={FadeIn} style={[styles.shelf, { backgroundColor: t.card }]}>
-      <Text style={{ fontSize: 84 }}>{round.item.emoji}</Text>
-      <View style={{ alignItems: 'center' }}>
-        <Text style={[font.h2, { color: t.text }]}>{round.item.ar}</Text>
-        <View style={[styles.tag, { backgroundColor: t.hintBg }]}><Text style={[font.h2, { color: t.text }]}>السعر {round.price}</Text></View>
+    <Animated.View entering={FadeIn} style={[styles.shop, { backgroundColor: t.card }]} onLayout={(e) => setShopW(e.nativeEvent.layout.width)}>
+      {shopW > 0 && <Awning width={shopW} />}
+      <View style={styles.shelfRow}>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 84 }}>{round.item.emoji}</Text>
+          <View style={styles.counter} />
+        </View>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={[font.h2, { color: t.text }]}>{round.item.ar}</Text>
+          <View style={styles.priceTag}>
+            <View style={styles.tagHole} />
+            <Text style={[font.h2, { color: '#7C2D12' }]}>السعر {round.price}</Text>
+          </View>
+        </View>
       </View>
     </Animated.View>
   );
@@ -127,20 +128,20 @@ export function WhatChangedGame({ api }: { api: GameApi }) {
   const t = useTheme();
   const [round] = useState(() => N.changedRound(api.genLevel, api.rng));
   const [phase, setPhase] = useState<'study' | 'cover' | 'answer'>('study');
-  const [wrongCells, setWrongCells] = useState<number[]>([]);
+  const [wrongSpots, setWrongSpots] = useState<number[]>([]);
   const [wrongOpts, setWrongOpts] = useState<number[]>([]);
   const [found, setFound] = useState<number | null>(null);
+  const [w, setW] = useState(0);
 
   useEffect(() => {
     if (phase === 'study') { const id = setTimeout(() => setPhase('cover'), round.studyMs); return () => clearTimeout(id); }
-    if (phase === 'cover') { const id = setTimeout(() => setPhase('answer'), 700); return () => clearTimeout(id); }
+    if (phase === 'cover') { const id = setTimeout(() => setPhase('answer'), 1100); return () => clearTimeout(id); }
   }, [phase, round.studyMs]);
 
-  const scene = phase === 'study' ? round.before : round.after;
-  const tapCell = (i: number) => {
-    if (phase !== 'answer' || round.kind === 'missing' || found !== null || wrongCells.includes(i)) return;
-    if (round.answerCells.includes(i)) { setFound(i); setTimeout(() => api.correct(), 700); }
-    else { setWrongCells([...wrongCells, i]); api.wrong(); }
+  const tapSpot = (i: number) => {
+    if (phase !== 'answer' || round.kind === 'missing' || found !== null || wrongSpots.includes(i)) return;
+    if (round.answerCells.includes(i)) { play('pop'); setFound(i); setTimeout(() => api.correct(), 800); }
+    else { setWrongSpots([...wrongSpots, i]); api.wrong(); }
   };
   const choose = (i: number) => {
     if (found !== null || wrongOpts.includes(i)) return;
@@ -148,40 +149,43 @@ export function WhatChangedGame({ api }: { api: GameApi }) {
     else { setWrongOpts([...wrongOpts, i]); api.wrong(); }
   };
 
-  const question = phase === 'study' ? 'انظر جيدًا وتذكّر…'
-    : phase === 'cover' ? '👀'
-    : round.kind === 'missing' ? 'ما الذي اختفى؟'
-    : round.kind === 'new' ? 'ما الشيء الجديد؟ المسه'
+  const question = phase === 'study' ? 'انظر إلى الغرفة جيدًا وتذكّر أين كل شيء…'
+    : phase === 'cover' ? ' '
+    : round.kind === 'missing' ? 'شيء اختفى من الغرفة! ما هو؟'
+    : round.kind === 'new' ? 'شيء جديد ظهر في الغرفة! المسه'
     : 'شيئان تبادلا مكانيهما، المس أحدهما';
+  const shownFound = found === null ? [] : round.kind === 'missing' ? [] : round.answerCells;
 
   return (
-    <View style={{ flex: 1, padding: 16, alignItems: 'center' }}>
+    <View style={{ flex: 1, padding: 12, alignItems: 'center' }} onLayout={(e) => setW(Math.min(e.nativeEvent.layout.width - 24, 560))}>
       <Prompt>{question}</Prompt>
       {phase === 'study' && <StudyBar ms={round.studyMs} />}
-      <View style={[styles.scene, { backgroundColor: t.card, maxWidth: round.columns * 104 }]}>
-        {phase === 'cover'
-          ? <Animated.View entering={FadeIn} style={styles.curtain}><Text style={{ fontSize: 72 }}>🙈</Text></Animated.View>
-          : scene.map((e, i) => {
-            const hinted = phase === 'answer' && api.hint && round.answerCells.includes(i);
-            const bg = found === i || (found !== null && round.answerCells.includes(i)) ? t.successBg : hinted ? t.hintBg : t.bg;
-            return (
-              <Pressy key={i} sound={false} onPress={() => tapCell(i)} accessibilityLabel={e || 'مكان فارغ'}
-                style={[styles.sceneCell, { width: `${100 / round.columns - 4}%`, backgroundColor: bg, opacity: wrongCells.includes(i) ? 0.35 : 1, borderStyle: e ? 'solid' : 'dashed', borderColor: e ? 'transparent' : t.primary }]}>
-                <Text style={{ fontSize: 44 }}>{e || '❔'}</Text>
-              </Pressy>
-            );
-          })}
-      </View>
+      {w > 0 && (
+        <RoomScene
+          width={w}
+          scene={phase === 'study' ? round.before : round.after}
+          dark={phase === 'cover'}
+          onTap={tapSpot}
+          found={shownFound}
+          wrong={wrongSpots}
+          hintSpot={phase === 'answer' && api.hint && found === null ? round.answerCells[0] : undefined}
+        />
+      )}
       {phase === 'answer' && round.kind === 'missing' && (
         <View style={[styles.grid, { marginTop: 16 }]}>
           {round.options.map((o, i) => {
             const state: OptionState = found === i ? 'correct' : wrongOpts.includes(i) ? 'wrong' : api.hint && i === round.correctIndex ? 'hint' : 'idle';
-            return <OptionTile key={i} state={state} width={round.options.length === 3 ? '30%' : '22%'} height={80} onPress={() => choose(i)}><Text style={{ fontSize: 40 }}>{o}</Text></OptionTile>;
+            return (
+              <OptionTile key={i} state={state} width={round.options.length === 3 ? '30%' : '22%'} height={84} onPress={() => choose(i)}>
+                <Text style={{ fontSize: 40 }}>{o}</Text>
+                <Text style={[font.small, { color: t.textMuted, fontSize: 11 }]} numberOfLines={1}>{N.roomItemName(o)}</Text>
+              </OptionTile>
+            );
           })}
         </View>
       )}
       {phase === 'answer' && found === null && (
-        <BigButton small label="أرني مرة أخرى" icon="👀" color={t.card} textColor={t.text} onPress={() => setPhase('study')} style={{ marginTop: 16 }} />
+        <BigButton small label="أرني الغرفة مرة أخرى" icon="👀" color={t.card} textColor={t.text} onPress={() => setPhase('study')} style={{ marginTop: 14 }} />
       )}
     </View>
   );
@@ -235,35 +239,104 @@ export function MirrorGame({ api }: { api: GameApi }) {
 }
 
 // ── Waste sorting ────────────────────────────────────────────────────────
+type Box = { x: number; y: number; w: number; h: number };
+
+/** Drag the thing into the right wheelie bin (or tap the bin). The lid opens and swallows it. */
 export function RecyclingGame({ api }: { api: GameApi }) {
   const t = useTheme();
-  const bins = N.binsFor(api.genLevel).length;
+  const [round] = useState(() => N.recyclingRound(api.genLevel, api.settings, api.rng));
+  const bins = round.options;
+  const [area, setArea] = useState(0);
+  const [opened, setOpened] = useState<number[]>(() => bins.map(() => 0));
+  const [wobble, setWobble] = useState<number[]>(() => bins.map(() => 0));
+  const [done, setDone] = useState(false);
+  const binViews = useRef<(HostInstance | null)[]>([]);
+  const binBoxes = useRef<(Box | null)[]>([]);
+  const itemView = useRef<HostInstance | null>(null);
+  const tx = useSharedValue(0), ty = useSharedValue(0), sc = useSharedValue(1);
+  const binW = area ? Math.min(118, (area - (bins.length - 1) * 10) / bins.length) : 0;
+
+  useEffect(() => {
+    const id = setTimeout(() => speak(round.prompt.item.ar, 'ar'), 300);
+    return () => clearTimeout(id);
+  }, [round]);
+
+  const measureBins = () => binViews.current.forEach((v, i) => v?.measureInWindow((x, y, w, h) => { binBoxes.current[i] = { x, y, w, h }; }));
+  const bump = (arr: number[], i: number) => arr.map((n, j) => (j === i ? n + 1 : n));
+  const back = () => { tx.set(withSpring(0)); ty.set(withSpring(0)); };
+
+  const drop = (i: number, from: { x: number; y: number }) => {
+    if (done) return;
+    if (i !== round.correctIndex) {
+      setWobble((w) => bump(w, i)); api.wrong(); back();
+      return;
+    }
+    setDone(true);
+    setOpened((o) => bump(o, i));
+    const box = binBoxes.current[i];
+    if (box) {
+      tx.set(withTiming(tx.value + box.x + box.w / 2 - from.x, { duration: 320 }));
+      ty.set(withTiming(ty.value + box.y + box.h * 0.12 - from.y, { duration: 320 }));
+    }
+    sc.set(withDelay(160, withTiming(0.1, { duration: 260 })));
+    setTimeout(() => play('pop'), 300);
+    setTimeout(() => api.correct(), 950);
+  };
+
+  // Tapping a bin works too (accessibility, very young children).
+  const tapBin = (i: number) => {
+    measureBins();
+    itemView.current?.measureInWindow((x, y, w, h) => setTimeout(() => drop(i, { x: x + w / 2, y: y + h / 2 }), 30));
+  };
+
+  const pan = usePanGesture({
+    runOnJS: true,
+    minDistance: 4,
+    enabled: !done,
+    onActivate: () => measureBins(),
+    onUpdate: (e) => { tx.set(e.translationX); ty.set(e.translationY); },
+    onDeactivate: (e) => {
+      const hit = binBoxes.current.findIndex((b) => b && e.absoluteX >= b.x - 12 && e.absoluteX <= b.x + b.w + 12 && e.absoluteY >= b.y - 30 && e.absoluteY <= b.y + b.h);
+      if (hit >= 0) drop(hit, { x: e.absoluteX, y: e.absoluteY }); else back();
+    },
+  });
+  const itemStyle = useAnimatedStyle(() => ({ transform: [{ translateX: tx.value }, { translateY: ty.value }, { scale: sc.value }] }));
+
   return (
-    <ChoiceGame api={api} generate={N.recyclingRound} columns={bins <= 3 ? bins : bins === 4 ? 2 : 3} optionHeight={110}
-      renderPrompt={(r, replay) => (
-        <Pressy sound={false} onPress={replay} style={{ alignItems: 'center' }} accessibilityLabel={r.prompt.item.ar}>
-          <Text style={{ fontSize: 110 }}>{r.prompt.item.emoji}</Text>
-          <Text style={[font.h2, { color: t.text }]}>{r.prompt.item.ar}</Text>
-          <Text style={[font.small, { color: t.textMuted }]}>في أي حاوية نضعها؟</Text>
-        </Pressy>
-      )}
-      renderOption={(b) => (
-        <View style={{ alignItems: 'center', gap: 4 }}>
-          <View style={[styles.bin, { backgroundColor: N.BINS[b].color }]}>
-            <Text style={{ fontSize: 30 }}>{N.BINS[b].emoji}</Text>
-            <Text style={{ fontSize: 18 }}>♻️</Text>
-          </View>
-          <Text style={[font.body, { color: t.text }]}>{N.BINS[b].ar}</Text>
+    <View style={{ flex: 1, padding: 16, justifyContent: 'space-between' }} onLayout={(e) => setArea(e.nativeEvent.layout.width - 32)}>
+      {/* zIndex keeps the dragged item above the bins */}
+      <View style={{ alignItems: 'center', zIndex: 10, elevation: 10 }}>
+        <Prompt>اسحب الشيء إلى الحاوية الصحيحة</Prompt>
+        <View ref={itemView} collapsable={false}>
+          <GestureDetector gesture={pan}>
+            <Animated.View style={[styles.wasteItem, { backgroundColor: t.card }, itemStyle]} accessibilityLabel={round.prompt.item.ar}>
+              <Text style={{ fontSize: 76 }}>{round.prompt.item.emoji}</Text>
+              <Text style={[font.body, { color: t.text }]}>{round.prompt.item.ar}</Text>
+            </Animated.View>
+          </GestureDetector>
         </View>
-      )} />
+      </View>
+      <View style={[styles.ground, { backgroundColor: t.dark ? '#334155' : '#D6D3D1' }]}>
+        <View style={styles.binsRow}>
+          {binW > 0 && bins.map((b, i) => (
+            <Pressy key={b} sound={false} onPress={() => tapBin(i)} accessibilityLabel={`حاوية ${N.BINS[b].ar}`}>
+              <View ref={(v) => { binViews.current[i] = v; }} collapsable={false}>
+                <WheelieBin bin={b} width={binW} open={opened[i]} wobble={wobble[i]} glow={api.hint && i === round.correctIndex && !done} />
+              </View>
+            </Pressy>
+          ))}
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  shelf: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', borderRadius: radius.lg, padding: 12 },
-  tag: { borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 4, marginTop: 6 },
-  coin: { borderRadius: 999, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'rgba(0,0,0,0.15)' },
-  note: { borderRadius: 8, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.5)' },
+  shop: { borderRadius: radius.lg, overflow: 'hidden', paddingBottom: 12, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  shelfRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingTop: 6 },
+  counter: { width: 110, height: 10, borderRadius: 5, backgroundColor: '#B07D4F', marginTop: -6 },
+  priceTag: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FED7AA', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 4, marginTop: 8, borderWidth: 2, borderColor: '#FB923C', transform: [{ rotate: '-4deg' }] },
+  tagHole: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFF' },
   purse: { minHeight: 92, borderRadius: radius.lg, borderWidth: 2, borderStyle: 'dashed', padding: 10, marginTop: 14, alignItems: 'center' },
   trayRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: 6 },
   wallet: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', direction: 'ltr' },
@@ -274,5 +347,7 @@ const styles = StyleSheet.create({
   scene: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, borderRadius: radius.lg, padding: 12, width: '100%', minHeight: 200, alignItems: 'center' },
   sceneCell: { aspectRatio: 1, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', borderWidth: 3 },
   curtain: { flex: 1, minHeight: 200, alignItems: 'center', justifyContent: 'center' },
-  bin: { width: 64, height: 70, borderTopLeftRadius: 10, borderTopRightRadius: 10, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  wasteItem: { alignItems: 'center', borderRadius: radius.lg, paddingHorizontal: 22, paddingVertical: 10, marginTop: 8, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 5 }, elevation: 5, zIndex: 10 },
+  ground: { borderRadius: radius.lg, paddingTop: 14, paddingBottom: 10, paddingHorizontal: 8, borderTopWidth: 6, borderTopColor: 'rgba(0,0,0,0.08)' },
+  binsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 10 },
 });

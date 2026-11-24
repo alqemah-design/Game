@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import Svg, { G, Path, Text as SvgText } from 'react-native-svg';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import type { Artwork, ArtStroke } from '@/domain/progress';
 import type { ColoringPage } from '@/domain/content/coloringPages';
 import { play } from '@/audio/sfx';
 import { Pressy } from '../components/Pressy';
-import { font, radius, useTheme } from '../theme/theme';
+import { font, radius, raised, useTheme } from '../theme/theme';
 
 type Tool = 'fill' | 'brush' | 'sticker';
 type Snapshot = Pick<Artwork, 'fills' | 'strokes' | 'stickers'>;
@@ -15,6 +16,18 @@ const COLORS = ['#EF4444', '#F97316', '#FACC15', '#84CC16', '#22C55E', '#14B8A6'
 const SIZES = [6, 12, 22];
 const STICKERS = ['⭐', '❤️', '🌸', '🦋', '🌈', '☁️', '🎈', '✨', '🍭', '🐞'];
 const VB = 300;
+
+/** Raised tool button with its name under the icon (children can't read icons alone). */
+function ToolButton({ icon, label, onPress, active, save }: { icon: string; label: string; onPress: () => void; active?: boolean; save?: boolean }) {
+  const t = useTheme();
+  const bg = save ? t.success : active ? t.primary : t.card;
+  return (
+    <Pressy onPress={onPress} accessibilityLabel={label} style={[styles.tool, raised(t, bg, save ? '#15803D' : active ? '#5B21B6' : t.edge)]}>
+      <Text style={{ fontSize: 24 }}>{icon}</Text>
+      <Text style={[styles.toolLabel, { color: save || active ? '#FFFFFF' : t.text }]}>{label}</Text>
+    </Pressy>
+  );
+}
 
 export function ColoringCanvas({ page, initial, onSave }: { page: ColoringPage; initial?: Snapshot; onSave: (s: Snapshot) => void }) {
   const t = useTheme();
@@ -86,13 +99,11 @@ export function ColoringCanvas({ page, initial, onSave }: { page: ColoringPage; 
 
       <View style={styles.tools}>
         {([['fill', '🪣', 'تعبئة'], ['brush', '🖌️', 'فرشاة'], ['sticker', '⭐', 'ملصقات']] as const).map(([id, icon, label]) => (
-          <Pressy key={id} onPress={() => setTool(id)} accessibilityLabel={label} style={[styles.tool, { backgroundColor: tool === id ? t.primary : t.card }]}>
-            <Text style={{ fontSize: 26 }}>{icon}</Text>
-          </Pressy>
+          <ToolButton key={id} icon={icon} label={label} active={tool === id} onPress={() => setTool(id)} />
         ))}
-        <Pressy onPress={undo} accessibilityLabel="تراجع" style={[styles.tool, { backgroundColor: t.card }]}><Text style={{ fontSize: 26 }}>↩️</Text></Pressy>
-        <Pressy onPress={() => commit({ fills: {}, strokes: [], stickers: [] })} accessibilityLabel="مسح" style={[styles.tool, { backgroundColor: t.card }]}><Text style={{ fontSize: 26 }}>🧽</Text></Pressy>
-        <Pressy onPress={() => onSave(art)} accessibilityLabel="حفظ" style={[styles.tool, { backgroundColor: t.success }]}><Text style={{ fontSize: 26 }}>💾</Text></Pressy>
+        <ToolButton icon="↩️" label="تراجع" onPress={undo} />
+        <ToolButton icon="🧽" label="مسح" onPress={() => commit({ fills: {}, strokes: [], stickers: [] })} />
+        <ToolButton icon="💾" label="حفظ" onPress={() => onSave(art)} save />
       </View>
 
       {tool === 'sticker' ? (
@@ -130,7 +141,8 @@ export function ColoringCanvas({ page, initial, onSave }: { page: ColoringPage; 
 const styles = StyleSheet.create({
   canvas: { width: '100%', aspectRatio: 1, maxWidth: 560, alignSelf: 'center', borderRadius: radius.lg, overflow: 'hidden' },
   tools: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 12 },
-  tool: { width: 54, height: 54, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  row: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
+  tool: { width: 58, height: 64, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  toolLabel: { fontSize: 11, fontWeight: '700', marginTop: 1 },
+  row: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingVertical: 10 },
   sw: { width: 48, height: 48, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
 });

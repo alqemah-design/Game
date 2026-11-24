@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { router } from 'expo-router';
 import { goBack } from '@/ui/nav';
 import Animated, { FadeInDown, BounceIn } from 'react-native-reanimated';
@@ -9,7 +10,8 @@ import { AvatarView } from '@/ui/components/AvatarView';
 import { BigButton } from '@/ui/components/BigButton';
 import { Pressy } from '@/ui/components/Pressy';
 import { Screen } from '@/ui/components/Screen';
-import { font, radius, useTheme } from '@/ui/theme/theme';
+import { font, radius, raised, useTheme } from '@/ui/theme/theme';
+import { Owl } from '@/ui/components/Owl';
 
 /** First launch / new child. No e-mail, no password – just a name and a face. */
 export default function Welcome() {
@@ -27,9 +29,9 @@ export default function Welcome() {
   };
 
   return (
-    <Screen edges={['top', 'bottom', 'left', 'right']}>
+    <Screen edges={['top', 'bottom', 'left', 'right']} scenery="#86EFAC">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.root}>
-        <Animated.Text entering={BounceIn.duration(900)} style={{ fontSize: 72 }}>🧠</Animated.Text>
+        <Animated.View entering={BounceIn.duration(900)}><Owl size={96} mood="wave" /></Animated.View>
         <Animated.Text entering={FadeInDown.delay(200)} style={[font.title, { color: t.text }]}>ألعاب العقل</Animated.Text>
         <Animated.View entering={FadeInDown.delay(400)} style={{ alignItems: 'center' }}>
           <AvatarView avatar={avatar} size={140} />
@@ -60,7 +62,7 @@ export default function Welcome() {
             maxLength={20}
             placeholder="اكتب اسمك هنا"
             placeholderTextColor={t.textMuted}
-            style={[styles.input, { backgroundColor: t.card, color: t.text, borderColor: t.border }]}
+            style={[styles.input, raised(t), { color: t.text }]}
             returnKeyType="done"
             onSubmitEditing={start}
           />
@@ -78,5 +80,5 @@ const styles = StyleSheet.create({
   kinds: { flexDirection: 'row', gap: 12, marginTop: 8 },
   kind: { minWidth: 110, height: 52, borderRadius: radius.pill, borderWidth: 2, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   sw: { width: 36, height: 36, borderRadius: 18, borderWidth: 3 },
-  input: { borderWidth: 2, borderRadius: radius.pill, paddingHorizontal: 20, height: 60, fontSize: 22, textAlign: 'center' },
+  input: { fontFamily: 'Tajawal_700Bold', borderWidth: 2, borderRadius: radius.pill, paddingHorizontal: 20, height: 60, fontSize: 22, textAlign: 'center' },
 });

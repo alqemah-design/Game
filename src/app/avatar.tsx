@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { goBack } from '@/ui/nav';
 import { AVATAR_OPTIONS, HAIR_COLORS, KIND_AR, PALETTE, SKIN_TONES, isUnlocked, optionsFor, withKind, type AvatarKind, type AvatarPart } from '@/domain/rewards/avatar';
 import { useActiveProfile, useProgress } from '@/data/progressStore';
@@ -7,7 +8,7 @@ import { AvatarView } from '@/ui/components/AvatarView';
 import { BigButton } from '@/ui/components/BigButton';
 import { Pressy } from '@/ui/components/Pressy';
 import { Screen } from '@/ui/components/Screen';
-import { font, radius, useTheme } from '@/ui/theme/theme';
+import { font, radius, raised, useTheme } from '@/ui/theme/theme';
 
 const PART_AR: Record<AvatarPart, string> = { hair: 'الشعر', outfit: 'الملابس', pattern: 'النقشة', accessory: 'إكسسوار' };
 
@@ -28,13 +29,13 @@ export default function AvatarEditor() {
   if (!p || !a) return null;
 
   return (
-    <Screen>
+    <Screen scenery="#C4B5FD">
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'stretch' }}>
         <View style={{ alignItems: 'center' }}><AvatarView avatar={a} size={180} /></View>
         <Text style={[font.small, { color: t.textMuted, textAlign: 'center' }]}>💎 {p.points} – العناصر المقفلة تُفتح بجمع النقاط</Text>
         <View style={[styles.wrap, { justifyContent: 'center', marginTop: 12 }]}>
           {(['boy', 'girl'] as AvatarKind[]).map((k) => (
-            <Pressy key={k} onPress={() => setA(withKind(a, k))} style={[styles.opt, { minWidth: 110, alignItems: 'center', backgroundColor: a.kind === k ? t.primary : t.card }]}>
+            <Pressy key={k} onPress={() => setA(withKind(a, k))} style={[styles.opt, raised(t, a.kind === k ? t.primary : t.card), { minWidth: 110, alignItems: 'center' }]}>
               <Text style={[font.body, { color: a.kind === k ? t.primaryText : t.text }]}>{k === 'boy' ? '👦' : '👧'} {KIND_AR[k]}</Text>
             </Pressy>
           ))}
@@ -48,7 +49,7 @@ export default function AvatarEditor() {
                 const active = a[part] === o.id;
                 return (
                   <Pressy key={o.id} disabled={!open} onPress={() => setA({ ...a, [part]: o.id })}
-                    style={[styles.opt, { backgroundColor: active ? t.primary : t.card, opacity: open ? 1 : 0.5 }]}>
+                    style={[styles.opt, raised(t, active ? t.primary : t.card), { opacity: open ? 1 : 0.55 }]}>
                     <Text style={[font.small, { color: active ? t.primaryText : t.text }]}>{open ? o.label : `🔒 ${o.label} · ${o.minPoints}`}</Text>
                   </Pressy>
                 );

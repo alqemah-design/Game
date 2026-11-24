@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import Animated, { ZoomIn, useAnimatedStyle, withSpring } from 'react-native-reanimated';

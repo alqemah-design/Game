@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import Animated, { Easing, FadeInUp, ZoomIn, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Defs, G, Path, RadialGradient, Stop } from 'react-native-svg';
 import type { ProgressEvents } from '@/domain/progress';
@@ -75,10 +76,23 @@ export function SuccessModal({ visible, level, points, perfect, events, effects,
             <StarBurst />
             <Text style={[font.title, { color: t.text }]}>{CHEERS[level % CHEERS.length]}</Text>
             <Text style={[font.body, { color: t.textMuted, marginTop: 4 }]}>أكملت المستوى {level}</Text>
+            <View style={styles.starsRow} accessibilityLabel={`${events.stars ?? 1} من 3 نجوم`}>
+              {[0, 1, 2].map((i) => (
+                <Animated.View key={i} entering={ZoomIn.delay(350 + i * 220).springify().damping(9)}>
+                  <Svg width={i === 1 ? 54 : 44} height={i === 1 ? 54 : 44} viewBox="0 0 100 100">
+                    <Path d="M50 4 L62.5 36 L96 37.5 L69.5 58.5 L79 91 L50 72 L21 91 L30.5 58.5 L4 37.5 L37.5 36 Z"
+                      fill={i < (events.stars ?? 1) ? '#FACC15' : t.border} stroke={i < (events.stars ?? 1) ? '#B45309' : 'rgba(0,0,0,0.15)'} strokeWidth="5" strokeLinejoin="round" />
+                  </Svg>
+                </Animated.View>
+              ))}
+            </View>
             <View style={[styles.pill, { backgroundColor: t.cardAlt }]}>
               <Text style={[font.h2, { color: t.text }]}>+{points} نقطة</Text>
             </View>
+            {events.dailyBonus && <Text style={[font.body, { color: t.primary }]}>✨ لعبة اليوم: نقاطك مضاعفة!</Text>}
             {perfect && <Text style={[font.body, { color: t.success }]}>🎯 بلا أي خطأ!</Text>}
+            {events.adapted === 'jump' && <Text style={[font.body, { color: t.text, textAlign: 'center' }]}>🚀 أنت سريع! سنقفز مستوى للأمام</Text>}
+            {events.adapted === 'repeat' && <Text style={[font.body, { color: t.text, textAlign: 'center' }]}>💪 لنتدرّب على هذا المستوى مرة أخرى</Text>}
 
             {events.stickers.map((s) => (
               <Animated.View key={s.points} entering={FadeInUp.delay(500)} style={[styles.reward, { backgroundColor: t.hintBg }]}>
@@ -101,7 +115,7 @@ export function SuccessModal({ visible, level, points, perfect, events, effects,
             ))}
 
             <View style={styles.actions}>
-              <BigButton label="المستوى التالي" icon="▶" onPress={onNext} color={t.success} style={{ alignSelf: 'stretch' }} />
+              <BigButton label={events.adapted === 'repeat' ? 'نتدرّب مرة أخرى' : 'المستوى التالي'} icon="▶" onPress={onNext} color={t.success} style={{ alignSelf: 'stretch' }} />
               <View style={styles.row}>
                 <BigButton small label="إعادة" icon="↻" onPress={onReplay} color={t.cardAlt} textColor={t.text} style={{ flex: 1 }} />
                 <BigButton small label="الرئيسية" icon="🏠" onPress={onHome} color={t.cardAlt} textColor={t.text} style={{ flex: 1 }} />
@@ -118,6 +132,7 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
   card: { width: '100%', maxWidth: 440, maxHeight: '90%', borderRadius: radius.lg, padding: 24 },
   burst: { width: 180, height: 150, alignItems: 'center', justifyContent: 'center', marginTop: -10 },
+  starsRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, marginTop: 8, direction: 'ltr' },
   pill: { borderRadius: radius.pill, paddingHorizontal: 20, paddingVertical: 8, marginVertical: 12 },
   reward: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: radius.md, padding: 12, marginTop: 10, alignSelf: 'stretch' },
   actions: { alignSelf: 'stretch', gap: 10, marginTop: 20 },

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import * as G from '@/domain/games/choiceGames';
 import { COLORS } from '@/domain/content/shapes';
 import { CONTINENT_AR } from '@/domain/content/countries';

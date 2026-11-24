@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Modal, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { BigButton } from './BigButton';
 import { Pressy } from './Pressy';
 import { font, radius, useTheme } from '../theme/theme';

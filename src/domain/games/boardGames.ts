@@ -17,11 +17,15 @@ export function shapeBoard(level: number, rng: Rng): { pieces: ShapePiece[]; slo
   return { pieces: shuffle(rng, pieces), slots: shuffle(rng, pieces) };
 }
 
+/** Letters whose capital and small forms look clearly different. */
+export const DIFFERENT_CASE = 'ABDEGHQRNTFLMIJY'.split('');
+
 // ── Capital ↔ small ──────────────────────────────────────────────────────
 export function capitalPairs(level: number, rng: Rng) {
   const n = tier([[1, 3], [2, 4], [4, 5], [6, 6]] as const, level);
-  // Letters whose cases look different are introduced first-level-friendly last.
-  const letters = sample(rng, ALPHABET, n);
+  // Pairs whose shapes differ (A/a, G/g) teach something; C/c or O/o look the same, so they
+  // only join from level 5.
+  const letters = sample(rng, level < 5 ? DIFFERENT_CASE : ALPHABET, n);
   return { capitals: shuffle(rng, letters), smalls: shuffle(rng, letters.map((l) => l.toLowerCase())) };
 }
 

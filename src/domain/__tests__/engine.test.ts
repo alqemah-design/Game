@@ -1,5 +1,5 @@
 import { effectiveLevel, tier } from '../engine/difficulty';
-import { sessionReducer, startSession, shouldHint, isPerfectLevel } from '../engine/session';
+import { sessionReducer, startSession, shouldHint, isPerfectLevel, starsFor } from '../engine/session';
 
 const rounds = () => 3;
 const reduce = sessionReducer(rounds);
@@ -30,6 +30,21 @@ describe('session engine', () => {
     expect(after).toBe(s);
     expect(reduce(s, { type: 'wrong', roundKey: first })).toBe(s); // stale mistake
     expect(s.round).toBe(1);
+  });
+
+  it('counts hinted rounds and awards 1–3 stars', () => {
+    let s = startSession(1, rounds);
+    expect(starsFor(s)).toBe(3);
+    s = reduce(s, { type: 'wrong', roundKey: s.roundKey });
+    expect(starsFor(s)).toBe(2); // a mistake, but no hint yet
+    s = reduce(s, { type: 'wrong', roundKey: s.roundKey });
+    expect(s.hintedRounds).toBe(1);
+    expect(starsFor(s)).toBe(1);
+  });
+
+  it('next can jump to a chosen level (adaptive difficulty)', () => {
+    const done = { ...startSession(4, rounds), phase: 'levelComplete' as const };
+    expect(reduce(done, { type: 'next', level: 6 }).level).toBe(6);
   });
 
   it('next advances the level, replay keeps it', () => {

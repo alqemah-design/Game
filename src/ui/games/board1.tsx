@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import Animated, { FadeIn, ZoomIn, useAnimatedStyle, useSharedValue, withTiming, interpolate } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Path, Pattern, Rect, Stop } from 'react-native-svg';
 import * as B from '@/domain/games/boardGames';

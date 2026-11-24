@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View, type HostInstance } from 'react-native';
+import { StyleSheet, View, type HostInstance } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import Animated, { FadeIn, ZoomIn, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming, Easing } from 'react-native-reanimated';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import * as N from '@/domain/games/newGames';

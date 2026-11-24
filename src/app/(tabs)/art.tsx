@@ -1,4 +1,5 @@
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { router } from 'expo-router';
 import { COLORING_PAGES } from '@/domain/content/coloringPages';
 import { ACHIEVEMENTS, unlockedColoringPages } from '@/domain/rewards/rewards';
@@ -6,7 +7,7 @@ import { useActiveProfile, useProgress } from '@/data/progressStore';
 import { ArtThumb } from '@/ui/coloring/ArtThumb';
 import { Pressy } from '@/ui/components/Pressy';
 import { Screen } from '@/ui/components/Screen';
-import { font, radius, useTheme } from '@/ui/theme/theme';
+import { font, radius, raised, useTheme } from '@/ui/theme/theme';
 
 export default function Art() {
   const t = useTheme();
@@ -15,7 +16,7 @@ export default function Art() {
   const unlocked = unlockedColoringPages(p.achievements);
 
   return (
-    <Screen>
+    <Screen scenery="#F9A8D4">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text style={[font.title, { color: t.text }]}>التلوين الإبداعي 🎨</Text>
         <Text style={[font.body, { color: t.textMuted, marginVertical: 8 }]}>اختر صفحة</Text>
@@ -26,7 +27,7 @@ export default function Art() {
             return (
               <Pressy key={page.id} disabled={!open} accessibilityLabel={open ? page.title : `مقفلة: ${how?.description}`}
                 onPress={() => router.push({ pathname: '/coloring/[page]', params: { page: page.id } })}
-                style={[styles.page, { backgroundColor: open ? t.card : t.cardAlt, opacity: open ? 1 : 0.6 }]}>
+                style={[styles.page, raised(t, open ? t.card : t.cardAlt), { opacity: open ? 1 : 0.7 }]}>
                 <Text style={{ fontSize: 48 }}>{open ? page.emoji : '🔒'}</Text>
                 <Text style={[font.small, { color: t.text }]}>{page.title}</Text>
                 {!open && how && <Text style={[font.small, { color: t.textMuted, fontSize: 11, textAlign: 'center' }]}>{how.description}</Text>}

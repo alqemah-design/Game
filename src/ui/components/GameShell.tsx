@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { goBack } from '../nav';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { GAME_BY_ID } from '@/domain/games/catalog';
 import { effectiveLevel } from '@/domain/engine/difficulty';
-import { isPerfectLevel, sessionReducer, shouldHint, startSession } from '@/domain/engine/session';
-import { emptyGameProgress, DEFAULT_PROFILE_SETTINGS, type ProfileSettings, type ProgressEvents } from '@/domain/progress';
+import { isPerfectLevel, sessionReducer, shouldHint, startSession, starsFor } from '@/domain/engine/session';
+import { emptyGameProgress, minutesLeftToday, DEFAULT_PROFILE_SETTINGS, type ProfileSettings, type ProgressEvents } from '@/domain/progress';
 import { createRng, type Rng } from '@/domain/rng';
 import type { GameId } from '@/domain/types';
 import { useActiveProfile, useProgress } from '@/data/progressStore';
@@ -14,6 +15,8 @@ import { stopSpeaking } from '@/audio/speech';
 import { Pressy } from './Pressy';
 import { Screen } from './Screen';
 import { SuccessModal } from './SuccessModal';
+import { GameIntro } from './GameIntro';
+import { TimeUp } from './TimeUp';
 import { font, radius, raised, useTheme } from '../theme/theme';
 import Svg, { Path } from 'react-native-svg';
 
@@ -50,6 +53,9 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
   const t = useTheme();
   const profile = useActiveProfile();
   const completeLevel = useProgress((s) => s.completeLevel);
+  const markIntroSeen = useProgress((s) => s.markIntroSeen);
+  // First visit: Bumi explains the game before the board starts (so voices don't overlap).
+  const [introOpen, setIntroOpen] = useState(() => !(profile?.seenIntros ?? []).includes(gameId));
   const settings = profile?.settings ?? DEFAULT_PROFILE_SETTINGS;
   const startLevel = (profile?.games[gameId] ?? emptyGameProgress()).level;
 
@@ -65,10 +71,27 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
     const key = `${s.level}:${s.roundKey}`;
     if (saved.current === key) return;
     saved.current = key;
-    setEvents(completeLevel({ gameId, level: s.level, points: s.pointsThisLevel, rounds: s.rounds, mistakes: s.mistakesThisLevel }));
+    setEvents(completeLevel({ gameId, level: s.level, points: s.pointsThisLevel, rounds: s.rounds, mistakes: s.mistakesThisLevel, stars: starsFor(s) }));
   }, [s, gameId, completeLevel]);
 
   useEffect(() => () => { stopSpeaking(); }, []);
+
+  const [now, setNow] = useState(() => Date.now());
+  // Count play time (only while this screen is open, the app is in front and the intro is closed).
+  const addPlayTime = useProgress((s) => s.addPlayTime);
+  useEffect(() => {
+    if (introOpen) return;
+    let last = Date.now();
+    let active = AppState.currentState === 'active';
+    const flush = () => { const t = Date.now(); if (active) addPlayTime(Math.min(60, Math.round((t - last) / 1000))); last = t; setNow(t); };
+    const id = setInterval(flush, 15000);
+    const sub = AppState.addEventListener('change', (st) => { flush(); active = st === 'active'; });
+    return () => { flush(); clearInterval(id); sub.remove(); };
+  }, [introOpen, addPlayTime]);
+
+  // Daily limit: never cut a level in the middle – stop when the child would start a new one.
+  const timeUp = profile ? minutesLeftToday(profile, now) <= 0 : false;
+  const [stopped, setStopped] = useState(() => timeUp);
 
   // Callbacks are tagged with the round they were handed out for; the engine drops stale ones
   // (late timers, duplicate reports), so a round can never be counted twice or skipped.
@@ -93,37 +116,42 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
   };
 
   return (
-    <Screen scenery={meta.color}>
+    <Screen scenery={meta.color} calm>
       <View style={styles.header}>
         <Pressy accessibilityRole="button" accessibilityLabel="رجوع" onPress={goBack} style={[styles.iconBtn, raised(t)]}>
           <Text style={{ fontSize: 26 }}>→</Text>
         </Pressy>
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={[font.h2, { color: t.text }]} numberOfLines={1}>{meta.title}</Text>
+          <Text style={[font.h2, { color: t.text, fontSize: 19 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{meta.title}</Text>
           <Text style={[font.small, { color: t.textMuted }]}>المستوى {s.level}</Text>
         </View>
+        <Pressy accessibilityRole="button" accessibilityLabel="كيف ألعب؟" onPress={() => setIntroOpen(true)} style={[styles.iconBtn, styles.helpBtn, raised(t)]}>
+          <Text style={[font.h2, { color: t.primary }]}>؟</Text>
+        </Pressy>
         <View style={[styles.score, raised(t)]}>
           <Text style={[font.body, { color: t.text }]}>⭐ {profile?.stars ?? 0}</Text>
         </View>
       </View>
       {s.rounds > 1 && <RoundDots total={s.rounds} done={s.round} color={meta.color} track={t.border} />}
       {NO_SCROLL.has(gameId) ? (
-        <View style={{ flex: 1, direction: meta.contentDir }}>{children(api)}</View>
+        <View style={{ flex: 1, direction: meta.contentDir }}>{!introOpen && children(api)}</View>
       ) : (
         // Scrolls only when the board is taller than the screen (small phones, large text).
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, direction: meta.contentDir }} bounces={false} keyboardShouldPersistTaps="handled">
-          {children(api)}
+          {!introOpen && children(api)}
         </ScrollView>
       )}
+      {stopped && timeUp && <TimeUp onHome={goBack} />}
+      <GameIntro visible={introOpen && !(stopped && timeUp)} meta={meta} onClose={() => { setIntroOpen(false); markIntroSeen(gameId); }} />
       <SuccessModal
-        visible={s.phase === 'levelComplete'}
+        visible={s.phase === 'levelComplete' && !(stopped && timeUp)}
         level={s.level}
-        points={s.pointsThisLevel}
+        points={events.pointsAwarded ?? s.pointsThisLevel}
         perfect={isPerfectLevel(s)}
         events={events}
         effects={settings.effects}
-        onNext={() => { setEvents(NO_EVENTS); dispatch({ type: 'next' }); }}
-        onReplay={() => { setEvents(NO_EVENTS); dispatch({ type: 'replay' }); }}
+        onNext={() => { const level = events.nextLevel; setEvents(NO_EVENTS); if (timeUp) setStopped(true); else dispatch({ type: 'next', level }); }}
+        onReplay={() => { setEvents(NO_EVENTS); if (timeUp) setStopped(true); else dispatch({ type: 'replay' }); }}
         onHome={goBack}
       />
     </Screen>
@@ -152,8 +180,9 @@ function RoundDots({ total, done, color, track }: { total: number; done: number;
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, gap: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingTop: 8, gap: 8 },
   iconBtn: { width: 52, height: 52, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  helpBtn: { width: 44, height: 44 },
   score: { borderRadius: radius.pill, paddingHorizontal: 14, height: 44, justifyContent: 'center' },
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: 12, flexWrap: 'wrap', paddingHorizontal: 24 },
   dot: { width: 14, height: 14, borderRadius: 7 },

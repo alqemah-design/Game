@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { router } from 'expo-router';
 import { ALPHABET } from '@/domain/content/englishWords';
 import type { Difficulty, MathOp } from '@/domain/types';
@@ -7,16 +8,19 @@ import { useActiveProfile, useProgress } from '@/data/progressStore';
 import { clearParentPass, hasParentPass } from '@/data/parentGate';
 import { ParentalGate } from '@/ui/components/ParentalGate';
 import { goBack } from '@/ui/nav';
+import { minutesLeftToday, weeklyReport } from '@/domain/progress';
+import { GAME_BY_ID } from '@/domain/games/catalog';
+import { checkArabicVoice, useArabicVoice } from '@/audio/speech';
 import { AvatarView } from '@/ui/components/AvatarView';
 import { BigButton } from '@/ui/components/BigButton';
 import { Pressy } from '@/ui/components/Pressy';
 import { Screen } from '@/ui/components/Screen';
-import { font, radius, useTheme } from '@/ui/theme/theme';
+import { font, radius, raised, useTheme } from '@/ui/theme/theme';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const t = useTheme();
   return (
-    <View style={[styles.section, { backgroundColor: t.card }]}>
+    <View style={[styles.section, raised(t)]}>
       <Text style={[font.h2, { color: t.text, marginBottom: 8 }]}>{title}</Text>
       {children}
     </View>
@@ -43,6 +47,66 @@ function Chips<T extends string>({ options, value, onPick }: { options: [T, stri
           <Text style={[font.small, { color: active(v) ? t.primaryText : t.text }]}>{label}</Text>
         </Pressy>
       ))}
+    </View>
+  );
+}
+
+/** This week at a glance, with what to practise together. */
+function WeeklyReportCard() {
+  const t = useTheme();
+  const p = useActiveProfile();
+  const [now] = useState(() => Date.now());
+  if (!p) return null;
+  const r = weeklyReport(p, now);
+  const left = minutesLeftToday(p, now);
+  const tile = (emoji: string, value: string | number, label: string) => (
+    <View style={[styles.stat, raised(t, t.cardAlt)]}>
+      <Text style={{ fontSize: 22 }}>{emoji}</Text>
+      <Text style={[font.h2, { color: t.text }]}>{value}</Text>
+      <Text style={[font.small, { color: t.textMuted, fontSize: 12 }]}>{label}</Text>
+    </View>
+  );
+  return (
+    <Section title={`تقرير الأسبوع: ${p.name}`}>
+      <View style={styles.stats}>
+        {tile('⏱️', r.minutes, 'دقيقة لعب')}
+        {tile('📅', `${r.activeDays}/7`, 'أيام نشاط')}
+        {tile('🎯', r.levels, 'مستوى')}
+        {tile('⭐', r.stars, 'نجمة')}
+      </View>
+      {p.settings.dailyLimitMin > 0 && <Text style={[font.small, { color: t.textMuted, marginTop: 8 }]}>متبقٍّ اليوم: {Math.ceil(left)} دقيقة</Text>}
+      {r.strong.length > 0 && (
+        <Text style={[font.body, { color: t.text, marginTop: 10 }]}>💪 يتقن: {r.strong.slice(0, 3).map((id) => GAME_BY_ID[id].title).join('، ')}</Text>
+      )}
+      {r.practice.length > 0 ? (
+        <Text style={[font.body, { color: t.text, marginTop: 6 }]}>🌱 يحتاج تدريبًا: {r.practice.slice(0, 3).map((id) => GAME_BY_ID[id].title).join('، ')} — جرّبوها معًا!</Text>
+      ) : r.levels > 0 ? (
+        <Text style={[font.small, { color: t.textMuted, marginTop: 6 }]}>لا توجد لعبة متعثّرة هذا الأسبوع 👏</Text>
+      ) : (
+        <Text style={[font.small, { color: t.textMuted, marginTop: 6 }]}>لم يلعب {p.name} هذا الأسبوع بعد.</Text>
+      )}
+    </Section>
+  );
+}
+
+/** Tells parents whether the device can speak Arabic, and how to fix it if not. */
+function VoiceStatus() {
+  const t = useTheme();
+  const ok = useArabicVoice();
+  if (ok === null) return null;
+  return (
+    <View style={[styles.voice, { backgroundColor: ok ? t.successBg : t.hintBg }]}>
+      <Text style={[font.body, { color: t.text }]}>{ok ? '✅ النطق العربي متوفر على هذا الجهاز' : '⚠️ لا يوجد صوت عربي على هذا الجهاز'}</Text>
+      {!ok && (
+        <>
+          <Text style={[font.small, { color: t.text, lineHeight: 22, marginTop: 6 }]}>
+            ألعاب الاستماع ستعرض الكلمة مكتوبة بدل نطقها. لإضافة صوت عربي:{'\n'}
+            • أندرويد: الإعدادات ← الإدارة العامة أو النظام ← تحويل النص إلى كلام ← ثبّت بيانات صوت «العربية».{'\n'}
+            • آيفون/آيباد: الإعدادات ← تسهيلات الاستخدام ← المحتوى المنطوق ← الأصوات ← العربية.
+          </Text>
+          <BigButton small label="أعد الفحص" icon="↻" color={t.card} textColor={t.text} onPress={() => { checkArabicVoice(); }} style={{ marginTop: 8, alignSelf: 'flex-start' }} />
+        </>
+      )}
     </View>
   );
 }
@@ -80,7 +144,7 @@ export default function Settings() {
   };
 
   return (
-    <Screen edges={['top', 'bottom', 'left', 'right']}>
+    <Screen edges={['top', 'bottom', 'left', 'right']} scenery="#CBD5E1" calm>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
         <View style={styles.row}>
           <Text style={[font.title, { color: t.text, flex: 1 }]}>إعدادات الأهل</Text>
@@ -99,11 +163,21 @@ export default function Settings() {
           <BigButton small label="إضافة طفل" icon="➕" color={t.cardAlt} textColor={t.text} onPress={() => router.push('/welcome')} style={{ marginTop: 8 }} />
           <View style={[styles.row, { marginTop: 12 }]}>
             <TextInput value={name} onChangeText={setName} maxLength={20} style={[styles.input, { color: t.text, borderColor: t.border, backgroundColor: t.bg }]} />
-            <BigButton small label="تغيير الاسم" onPress={() => s.renameProfile(name)} />
+            <BigButton small label="حفظ الاسم" onPress={() => s.renameProfile(name)} />
           </View>
         </Section>
 
+        <WeeklyReportCard />
+
+        <Section title="وقت اللعب اليومي">
+          <Chips<string> options={[['0', 'بلا حد'], ['15', '١٥ د'], ['30', '٣٠ د'], ['45', '٤٥ د'], ['60', 'ساعة']]} value={String(st.dailyLimitMin)} onPick={(v) => set({ dailyLimitMin: Number(v) })} />
+          <Text style={[font.small, { color: t.textMuted, marginTop: 6 }]}>
+            عند انتهاء الوقت يُكمل الطفل المستوى الحالي ثم تظهر رسالة لطيفة. يمكنكم إضافة ١٥ دقيقة من خلف البوابة.
+          </Text>
+        </Section>
+
         <Section title="الصوت والمؤثرات">
+          <VoiceStatus />
           <Toggle label="الأصوات والنطق" value={st.sound} onChange={(v) => set({ sound: v })} />
           <Toggle label="الاهتزاز" value={st.haptics} onChange={(v) => set({ haptics: v })} />
           <Toggle label="الاحتفالات المتحركة" value={st.effects} onChange={(v) => set({ effects: v })} />
@@ -115,6 +189,8 @@ export default function Settings() {
           <Chips<Difficulty> options={[['easy', 'سهل'], ['normal', 'عادي'], ['hard', 'صعب']]} value={st.difficulty} onPick={(d) => set({ difficulty: d })} />
           <Text style={[font.small, { color: t.textMuted, marginTop: 6 }]}>تُطبَّق على كل الألعاب.</Text>
           <Toggle label="بلا مؤقتات (وقت مفتوح)" value={st.noTimers} onChange={(v) => set({ noTimers: v })} />
+          <Toggle label="صعوبة تتكيّف تلقائيًا" value={st.adaptive} onChange={(v) => set({ adaptive: v })} />
+          <Text style={[font.small, { color: t.textMuted }]}>يقفز مستوى بعد مستويين بلا خطأ، ويعيد المستوى بعد مستويين صعبين.</Text>
         </Section>
 
         <Section title="تحدي الرياضيات">
@@ -160,11 +236,14 @@ export default function Settings() {
 }
 
 const styles = StyleSheet.create({
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  stat: { flexGrow: 1, minWidth: '22%', alignItems: 'center', borderRadius: radius.md, padding: 8 },
+  voice: { borderRadius: radius.md, padding: 12, marginBottom: 8 },
   section: { borderRadius: radius.lg, padding: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 52 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: radius.pill, minHeight: 44, justifyContent: 'center' },
   letter: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   child: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8, borderRadius: radius.md, marginBottom: 6 },
-  input: { flex: 1, borderWidth: 2, borderRadius: radius.pill, paddingHorizontal: 16, height: 48, fontSize: 18 },
+  input: { fontFamily: 'Tajawal_700Bold', flex: 1, borderWidth: 2, borderRadius: radius.pill, paddingHorizontal: 16, height: 48, fontSize: 18 },
 });

@@ -1,16 +1,21 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { router } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Text } from '@/ui/components/Text';
+import { router, useFocusEffect } from 'expo-router';
+import { TimeUp } from '@/ui/components/TimeUp';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { GAMES, type AgeBand } from '@/domain/games/catalog';
+import { GAMES, GAME_BY_ID, type AgeBand, type GameMeta } from '@/domain/games/catalog';
+import { dayKey, gameOfTheDay, minutesLeftToday } from '@/domain/progress';
+import type { GameId } from '@/domain/types';
 import { earnedStickers, nextSticker, unlockedDecorations } from '@/domain/rewards/rewards';
 import { useActiveProfile } from '@/data/progressStore';
 import { issueParentPass } from '@/data/parentGate';
+import { useArabicVoice } from '@/audio/speech';
 import { AvatarView } from '@/ui/components/AvatarView';
 import { ParentalGate } from '@/ui/components/ParentalGate';
 import { Pressy } from '@/ui/components/Pressy';
 import { Screen } from '@/ui/components/Screen';
-import { font, radius, useTheme } from '@/ui/theme/theme';
+import { font, radius, raised, useTheme } from '@/ui/theme/theme';
 
 const AGE_TITLES: Record<AgeBand, string> = { '3-5': 'للصغار ٣–٥ 🧸', '5-7': 'للمتعلمين ٥–٧ 📚', '7-9': 'للأذكياء ٧–٩ 🚀' };
 const DECOR: Record<string, string> = { balloon: '🎈', rainbow: '🌈', trophy: '🏆', medal: '🏅', star: '🌟' };
@@ -20,10 +25,28 @@ function greeting() {
   return h < 12 ? 'صباح الخير' : h < 18 ? 'مرحبًا' : 'مساء الخير';
 }
 
+const openGame = (id: GameId) => router.push(id === 'coloring' ? '/art' : { pathname: '/game/[id]', params: { id } });
+
+/** Big shortcut card: continue the last game, or the game of the day. */
+function HeroCard({ game, kicker, note }: { game: GameMeta; kicker: string; note: string }) {
+  return (
+    <Pressy onPress={() => openGame(game.id)} accessibilityLabel={`${kicker}: ${game.title}`} style={[styles.hero, { backgroundColor: game.color }]}>
+      <View pointerEvents="none" style={styles.shine} />
+      <View style={[styles.badge, { width: 50, height: 50 }]}><Text style={[styles.cardEmoji, { fontSize: 28 }]}>{game.emoji}</Text></View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.heroKicker}>{kicker}</Text>
+        <Text style={styles.cardTitle} numberOfLines={1}>{game.title}</Text>
+        <Text style={styles.cardSub} numberOfLines={1}>{note}</Text>
+      </View>
+    </Pressy>
+  );
+}
+
 export default function Home() {
   const t = useTheme();
   const p = useActiveProfile()!;
   const [gate, setGate] = useState(false);
+  const hasArabic = useArabicVoice();
   const { width } = useWindowDimensions();
   const cols = width >= 900 ? 4 : width >= 600 ? 3 : 2;
   const stickers = earnedStickers(p.points);
@@ -31,6 +54,13 @@ export default function Home() {
   const prevThreshold = stickers.at(-1)?.points ?? 0;
   const pct = next ? (p.points - prevThreshold) / (next.points - prevThreshold) : 1;
   const decorations = unlockedDecorations(p.achievements);
+  const [now, setNow] = useState(() => Date.now());
+  // Re-read the clock each time Home comes back into view (daily limit, game of the day).
+  useFocusEffect(useCallback(() => { setNow(Date.now()); }, []));
+  const timeUp = minutesLeftToday(p, now) <= 0;
+  const today = GAME_BY_ID[gameOfTheDay(dayKey(now), p.id)];
+  const last = GAMES.filter((g) => (p.games[g.id]?.lastPlayedAt ?? 0) > 0 && g.id !== today.id)
+    .sort((a, b) => (p.games[b.id]?.lastPlayedAt ?? 0) - (p.games[a.id]?.lastPlayedAt ?? 0))[0];
 
   return (
     <Screen scenery="#86EFAC">
@@ -46,10 +76,16 @@ export default function Home() {
           </View>
           <Pressy onPress={() => setGate(true)} accessibilityLabel="إعدادات الأهل" style={[styles.gear, { backgroundColor: t.card }]}>
             <Text style={{ fontSize: 26 }}>⚙️</Text>
+            {hasArabic === false && <View style={styles.alertDot} accessibilityLabel="تنبيه للأهل" />}
           </Pressy>
         </View>
 
-        <Pressy onPress={() => router.push('/rewards')} style={[styles.rewards, { backgroundColor: t.card }]} accessibilityLabel="الملصقات والإنجازات">
+        <View style={styles.heroRow}>
+          {last && <HeroCard game={last} kicker="▶ تابع اللعب" note={`المستوى ${p.games[last.id]?.level ?? 1}`} />}
+          <HeroCard game={today} kicker="✨ لعبة اليوم" note="نقاط مضاعفة ×٢" />
+        </View>
+
+        <Pressy onPress={() => router.push('/rewards')} style={[styles.rewards, raised(t)]} accessibilityLabel="الملصقات والإنجازات">
           <View style={styles.rewardsTop}>
             <Text style={[font.body, { color: t.text }]}>ملصقاتي {stickers.length}/15</Text>
             {next && <Text style={[font.small, { color: t.textMuted }]}>التالي {next.emoji} عند {next.points}</Text>}
@@ -69,7 +105,7 @@ export default function Home() {
                 return (
                   <Animated.View key={g.id} entering={FadeInUp.delay(bi * 120 + i * 50)} style={{ width: `${100 / cols}%`, padding: 6 }}>
                     <Pressy
-                      onPress={() => router.push(g.id === 'coloring' ? '/art' : { pathname: '/game/[id]', params: { id: g.id } })}
+                      onPress={() => openGame(g.id)}
                       accessibilityLabel={`${g.title}، المستوى ${level}`}
                       style={[styles.card, { backgroundColor: g.color }]}
                     >
@@ -88,6 +124,7 @@ export default function Home() {
           </View>
         ))}
       </ScrollView>
+      {timeUp && <TimeUp />}
       <ParentalGate visible={gate} onCancel={() => setGate(false)} onPass={() => { setGate(false); issueParentPass(); router.push('/settings'); }} />
     </Screen>
   );
@@ -98,6 +135,14 @@ const styles = StyleSheet.create({
   avatar: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center' },
   gear: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   rewards: { marginTop: 16, borderRadius: radius.lg, padding: 16 },
+  alertDot: { position: 'absolute', top: 2, end: 2, width: 14, height: 14, borderRadius: 7, backgroundColor: '#EF4444', borderWidth: 2, borderColor: '#FFF' },
+  heroRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  hero: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: radius.lg, padding: 12, overflow: 'hidden', minHeight: 84,
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.45)', borderBottomWidth: 7, borderBottomColor: 'rgba(0,0,0,0.22)',
+    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 5 }, elevation: 5,
+  },
+  heroKicker: { fontSize: 12, fontWeight: '800', color: 'rgba(255,255,255,0.95)' },
   rewardsTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   bar: { height: 12, borderRadius: 6, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 6 },

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { ARABIC_LETTERS, type ArabicLetter } from '@/domain/content/arabicLetters';
 import { speak } from '@/audio/speech';

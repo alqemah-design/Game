@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import Animated, {
   FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, cancelAnimation, Easing,
 } from 'react-native-reanimated';
 import type { ChoiceRound, GameSettings } from '@/domain/types';
 import type { Rng } from '@/domain/rng';
-import { speak } from '@/audio/speech';
+import { speak, useArabicVoice } from '@/audio/speech';
 import type { GameApi } from './GameShell';
 import { Pressy } from './Pressy';
 import { radius, raised, TOUCH, useTheme } from '../theme/theme';
@@ -63,11 +64,17 @@ function ChoiceRoundView<P, O>({ api, generate, renderPrompt, renderOption, colu
   };
 
   const showHint = api.hint || timedOut;
+  // Without an Arabic voice a listening question would be silent: show the word instead.
+  const hasArabic = useArabicVoice();
+  const silentFallback = autoSpeak && round.speak?.lang === 'ar' && hasArabic === false;
 
   return (
     <View style={styles.root}>
       <Animated.View entering={FadeIn.duration(250)} style={styles.prompt}>
         {renderPrompt(round, replay)}
+        {silentFallback && (
+          <Text style={[styles.fallback, { color: t.text, backgroundColor: t.hintBg }]}>🔇 {round.speak!.text}</Text>
+        )}
       </Animated.View>
       {useTimer && <TimerBar seconds={timeLimit!} paused={solved !== null} onDone={() => setTimedOut(true)} />}
       <View style={styles.grid}>
@@ -134,6 +141,7 @@ const styles = StyleSheet.create({
   prompt: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 160 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, paddingBottom: 16 },
   tile: { flex: 1, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', padding: 8 },
+  fallback: { marginTop: 10, fontSize: 22, fontWeight: '800', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 4, overflow: 'hidden' },
   timer: { height: 10, borderRadius: 5, overflow: 'hidden', marginBottom: 12 },
   timerFill: { height: '100%', borderRadius: 5 },
 });

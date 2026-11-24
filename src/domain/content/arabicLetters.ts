@@ -36,3 +36,21 @@ export const ARABIC_LETTERS: readonly ArabicLetter[] = [
   { id: 'waw', char: 'و', name: 'واو', word: 'وردة', emoji: '🌹' },
   { id: 'ya', char: 'ي', name: 'ياء', word: 'يد', emoji: '✋' },
 ];
+
+/**
+ * Teaching order: letters with clearly different shapes first, "sibling" letters that differ only by
+ * dots later, so a beginner is never asked to tell ج from ح from خ on day one.
+ */
+export const TEACHING_ORDER: readonly string[] = [
+  'alif', 'ba', 'jim', 'dal', 'ra', 'sin', 'mim', // stage 1: all distinct shapes
+  'sad', 'taa', 'ayn', 'fa', 'kaf', 'lam', 'waw', // stage 2: still distinct
+  'nun', 'haa', 'ya', 'ta', 'ha', 'zay', 'shin', // stage 3: first dot-siblings
+  'tha', 'kha', 'dhal', 'dad', 'zaa', 'ghayn', 'qaf', // stage 4: the rest
+];
+
+/** Letters sharing a base shape and differing only by dots. */
+export const LETTER_FAMILIES: readonly (readonly string[])[] = [
+  ['ba', 'ta', 'tha', 'nun', 'ya'], ['jim', 'ha', 'kha'], ['dal', 'dhal'], ['ra', 'zay'], ['sin', 'shin'],
+  ['sad', 'dad'], ['taa', 'zaa'], ['ayn', 'ghayn'], ['fa', 'qaf'],
+];
+export const familyOf = (id: string) => LETTER_FAMILIES.find((f) => f.includes(id)) ?? [id];

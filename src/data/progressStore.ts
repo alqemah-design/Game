@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { Avatar } from '@/domain/rewards/avatar';
 import {
-  addPoints, applyLevelComplete, createProfile, normalizeProfiles,
+  addPlaySeconds, addPoints, applyLevelComplete, createProfile, grantBonusMinutes, normalizeProfiles,
   type Artwork, type LevelResult, type Profile, type ProfileSettings, type ProgressEvents,
 } from '@/domain/progress';
 import { kvStorage } from './storage';
@@ -28,6 +28,9 @@ type Actions = {
   /** New drawing → +5 points once. Saving again (same id) updates it in place, no points. */
   saveArtwork: (art: Omit<Artwork, 'id' | 'createdAt'>, id?: string) => { id: string; isNew: boolean; events: ProgressEvents };
   deleteArtwork: (id: string) => void;
+  markIntroSeen: (gameId: string) => void;
+  addPlayTime: (seconds: number) => void;
+  grantMinutes: (minutes: number) => void;
   resetProgress: () => void;
   wipeEverything: () => void;
   setColorScheme: (s: State['colorScheme']) => void;
@@ -90,6 +93,9 @@ export const useProgress = create<State & Actions>()(
           return { id: artId, isNew: true, events };
         },
         deleteArtwork: (id) => updateActive((p) => ({ ...p, artworks: p.artworks.filter((a) => a.id !== id) })),
+        addPlayTime: (seconds) => updateActive((p) => addPlaySeconds(p, seconds, Date.now())),
+        grantMinutes: (minutes) => updateActive((p) => grantBonusMinutes(p, minutes, Date.now())),
+        markIntroSeen: (gameId) => updateActive((p) => (p.seenIntros.includes(gameId) ? p : { ...p, seenIntros: [...p.seenIntros, gameId] })),
         resetProgress: () =>
           updateActive((p) => ({ ...createProfile(p.id, p.name, p.createdAt, p.avatar), settings: p.settings })),
         wipeEverything: () => set({ profiles: {}, activeId: null }),

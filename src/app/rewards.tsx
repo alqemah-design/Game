@@ -1,25 +1,26 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { goBack } from '@/ui/nav';
 import { ACHIEVEMENTS, STICKERS } from '@/domain/rewards/rewards';
 import { useActiveProfile } from '@/data/progressStore';
 import { BigButton } from '@/ui/components/BigButton';
 import { Screen } from '@/ui/components/Screen';
-import { font, radius, useTheme } from '@/ui/theme/theme';
+import { font, radius, raised, useTheme } from '@/ui/theme/theme';
 
 export default function Rewards() {
   const t = useTheme();
   const p = useActiveProfile();
   if (!p) return null;
   return (
-    <Screen>
+    <Screen scenery="#FDE68A">
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text style={[font.title, { color: t.text }]}>ملصقاتي 🏅</Text>
         <View style={styles.grid}>
           {STICKERS.map((s) => {
             const has = p.points >= s.points;
             return (
-              <View key={s.points} style={[styles.sticker, { backgroundColor: has ? t.hintBg : t.card }]} accessibilityLabel={has ? s.name : `مقفل حتى ${s.points} نقطة`}>
-                <Text style={{ fontSize: 40, opacity: has ? 1 : 0.25 }}>{has ? s.emoji : '❔'}</Text>
+              <View key={s.points} style={[styles.sticker, raised(t, has ? t.hintBg : t.card)]} accessibilityLabel={has ? s.name : `مقفل حتى ${s.points} نقطة`}>
+                <Text style={{ fontSize: 40, opacity: has ? 1 : 0.13 }}>{s.emoji}</Text>
                 <Text style={[font.small, { color: has ? t.text : t.textMuted, fontSize: 11 }]}>{has ? s.name : `${s.points} 💎`}</Text>
               </View>
             );
@@ -29,7 +30,7 @@ export default function Rewards() {
         {ACHIEVEMENTS.map((a) => {
           const has = p.achievements.includes(a.id);
           return (
-            <View key={a.id} style={[styles.row, { backgroundColor: has ? t.successBg : t.card }]}>
+            <View key={a.id} style={[styles.row, raised(t, has ? t.successBg : t.card)]}>
               <Text style={{ fontSize: 34, opacity: has ? 1 : 0.3 }}>{a.emoji}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[font.body, { color: t.text }]}>{a.title}</Text>

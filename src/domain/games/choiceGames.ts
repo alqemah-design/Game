@@ -1,6 +1,6 @@
 /** Generators for every multiple-choice game. Pure functions of (level, settings, rng). */
 import { ALPHABET } from '../content/englishWords';
-import { ARABIC_LETTERS, type ArabicLetter } from '../content/arabicLetters';
+import { ARABIC_LETTERS, TEACHING_ORDER, familyOf, type ArabicLetter } from '../content/arabicLetters';
 import { COUNTRIES, type Country } from '../content/countries';
 import { PRODUCE, type Produce } from '../content/produce';
 import { COLORS, COLOR_NAMES, SHAPES, type ColorName, type ShapeKind } from '../content/shapes';
@@ -20,16 +20,30 @@ export function soundLetterRound(level: number, s: GameSettings, rng: Rng): Choi
 }
 
 // ── Arabic letters: listen mode & first-letter mode ──────────────────────
+const BY_ID = Object.fromEntries(ARABIC_LETTERS.map((l) => [l.id, l]));
 function arabicPool(level: number) {
   const span = tier([[1, 7], [2, 14], [3, 21], [4, 28]] as const, level);
-  return ARABIC_LETTERS.slice(0, span);
+  return TEACHING_ORDER.slice(0, span).map((id) => BY_ID[id]);
+}
+
+/**
+ * Early levels: distractors never come from the answer's dot-family (no ب vs ت yet).
+ * From level 6: siblings are preferred, to train exactly that discrimination.
+ */
+function arabicOptions(level: number, letter: ArabicLetter, pool: ArabicLetter[], n: number, rng: Rng) {
+  const family = familyOf(letter.id);
+  const siblings = pool.filter((l) => l.id !== letter.id && family.includes(l.id));
+  const others = pool.filter((l) => !family.includes(l.id));
+  const ordered = level >= 6 ? [...shuffle(rng, siblings), ...shuffle(rng, others)] : shuffle(rng, others);
+  const options = shuffle(rng, [letter, ...ordered.slice(0, n - 1)]);
+  return { options, correctIndex: options.indexOf(letter) };
 }
 
 export function arabicListenRound(level: number, _s: GameSettings, rng: Rng): ChoiceRound<{ letter: ArabicLetter }, ArabicLetter> {
   const pool = arabicPool(level);
   const letter = pick(rng, pool);
   const n = tier([[1, 3], [3, 4], [6, 6]] as const, level);
-  const { options, correctIndex } = withDistractors(rng, letter, pool, n, (l) => l.id);
+  const { options, correctIndex } = arabicOptions(level, letter, pool, n, rng);
   return { prompt: { letter }, options, correctIndex, speak: { text: letter.name, lang: 'ar' } };
 }
 
@@ -37,7 +51,7 @@ export function arabicFirstLetterRound(level: number, _s: GameSettings, rng: Rng
   const pool = arabicPool(level);
   const letter = pick(rng, pool);
   const n = tier([[1, 3], [3, 4], [6, 6]] as const, level);
-  const { options, correctIndex } = withDistractors(rng, letter, pool, n, (l) => l.id);
+  const { options, correctIndex } = arabicOptions(level, letter, pool, n, rng);
   return { prompt: { letter }, options, correctIndex, speak: { text: letter.word, lang: 'ar' } };
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { goBack } from '@/ui/nav';
 import { PAGE_BY_ID } from '@/domain/content/coloringPages';
@@ -10,7 +11,7 @@ import { ColoringCanvas } from '@/ui/coloring/ColoringCanvas';
 import { Confetti } from '@/ui/components/Confetti';
 import { Pressy } from '@/ui/components/Pressy';
 import { Screen } from '@/ui/components/Screen';
-import { font, radius, useTheme } from '@/ui/theme/theme';
+import { font, radius, raised, useTheme } from '@/ui/theme/theme';
 
 const toast = { position: 'absolute' as const, top: 100, alignSelf: 'center' as const, borderRadius: radius.pill, paddingHorizontal: 20, paddingVertical: 10 };
 
@@ -28,9 +29,9 @@ export default function ColoringScreen() {
   const initial = artId ? p.artworks.find((a) => a.id === artId) : undefined;
 
   return (
-    <Screen>
+    <Screen scenery="#F9A8D4" calm>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, gap: 12 }}>
-        <Pressy onPress={goBack} accessibilityLabel="رجوع" style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center' }}>
+        <Pressy onPress={goBack} accessibilityLabel="رجوع" style={[{ width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' }, raised(t)]}>
           <Text style={{ fontSize: 26, color: t.text }}>→</Text>
         </Pressy>
         <Text style={[font.h2, { color: t.text }]}>{page.emoji} {page.title}</Text>

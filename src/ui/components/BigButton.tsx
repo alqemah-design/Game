@@ -1,4 +1,5 @@
-import { StyleSheet, Text, type ViewStyle } from 'react-native';
+import { StyleSheet, type ViewStyle } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { Pressy } from './Pressy';
 import { font, radius, TOUCH, useTheme } from '../theme/theme';
 

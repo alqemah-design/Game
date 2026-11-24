@@ -110,3 +110,27 @@ describe('settings edge cases', () => {
     }
   });
 });
+
+describe('letter teaching order', () => {
+  const { TEACHING_ORDER, ARABIC_LETTERS, familyOf } = jest.requireActual('../content/arabicLetters');
+  it('covers all 28 letters once, and the first 14 contain no dot-siblings', () => {
+    expect([...TEACHING_ORDER].sort()).toEqual(ARABIC_LETTERS.map((l: { id: string }) => l.id).sort());
+    const early = TEACHING_ORDER.slice(0, 14);
+    for (const id of early) expect(familyOf(id).filter((f: string) => f !== id && early.includes(f))).toEqual([]);
+  });
+  it('beginner Arabic rounds never mix siblings; advanced rounds do', () => {
+    let advancedSiblings = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const r = C.arabicListenRound(2, S, createRng(seed));
+      const fam = familyOf(r.options[r.correctIndex].id);
+      expect(r.options.filter((o) => o.id !== r.options[r.correctIndex].id && fam.includes(o.id))).toEqual([]);
+      const a = C.arabicListenRound(8, S, createRng(seed));
+      const famA = familyOf(a.options[a.correctIndex].id);
+      advancedSiblings += a.options.filter((o) => o.id !== a.options[a.correctIndex].id && famA.includes(o.id)).length;
+    }
+    expect(advancedSiblings).toBeGreaterThan(50);
+  });
+  it('capital ↔ small uses different-looking pairs before level 5', () => {
+    for (let seed = 0; seed < 50; seed++) for (const c of B.capitalPairs(3, createRng(seed)).capitals) expect(B.DIFFERENT_CASE).toContain(c);
+  });
+});

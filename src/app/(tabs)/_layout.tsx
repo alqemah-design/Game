@@ -1,4 +1,4 @@
-import { Text } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { useActiveProfile } from '@/data/progressStore';

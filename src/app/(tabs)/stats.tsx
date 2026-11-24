@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '@/ui/components/Text';
 import { GAMES, SKILL_AR, type Skill } from '@/domain/games/catalog';
 import { dayKey } from '@/domain/progress';
 import { useActiveProfile } from '@/data/progressStore';
 import { Screen } from '@/ui/components/Screen';
-import { font, radius, useTheme } from '@/ui/theme/theme';
+import { font, radius, raised, useTheme } from '@/ui/theme/theme';
+import { Owl } from '@/ui/components/Owl';
 
 const DAYS_AR = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
 
@@ -25,12 +27,18 @@ export default function Stats() {
   const maxSkill = Math.max(1, ...skills.map((s) => s.levels));
 
   return (
-    <Screen>
+    <Screen scenery="#93C5FD">
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
         <Text style={[font.title, { color: t.text }]}>إنجازاتي 📊</Text>
+        {played.length === 0 && (
+          <View style={[styles.card, raised(t), { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
+            <Owl size={90} mood="wave" />
+            <Text style={[font.body, { color: t.text, flex: 1, lineHeight: 26 }]}>أهلًا! العب أول لعبة، وسأرسم لك هنا نجومك ومهاراتك وأيامك 🌟</Text>
+          </View>
+        )}
         <View style={styles.tiles}>
           {[['⭐', p.stars, 'نجمة'], ['💎', p.points, 'نقطة'], ['🔥', p.bestStreak, 'أفضل سلسلة'], ['🎮', played.length, 'لعبة']].map(([e, v, l]) => (
-            <View key={String(l)} style={[styles.tile, { backgroundColor: t.card }]}>
+            <View key={String(l)} style={[styles.tile, raised(t)]}>
               <Text style={{ fontSize: 28 }}>{e}</Text>
               <Text style={[font.h2, { color: t.text }]}>{v}</Text>
               <Text style={[font.small, { color: t.textMuted }]}>{l}</Text>
@@ -38,7 +46,7 @@ export default function Stats() {
           ))}
         </View>
 
-        <View style={[styles.card, { backgroundColor: t.card }]}>
+        <View style={[styles.card, raised(t)]}>
           <Text style={[font.body, { color: t.text, marginBottom: 12 }]}>مستويات هذا الأسبوع</Text>
           <View style={styles.chart}>
             {week.map((d, i) => (
@@ -53,7 +61,7 @@ export default function Stats() {
           </View>
         </View>
 
-        <View style={[styles.card, { backgroundColor: t.card }]}>
+        <View style={[styles.card, raised(t)]}>
           <Text style={[font.body, { color: t.text, marginBottom: 12 }]}>المهارات</Text>
           {skills.map((s) => (
             <View key={s.skill} style={styles.skillRow}>
@@ -66,7 +74,7 @@ export default function Stats() {
           ))}
         </View>
 
-        <View style={[styles.card, { backgroundColor: t.card }]}>
+        <View style={[styles.card, raised(t)]}>
           <Text style={[font.body, { color: t.text, marginBottom: 8 }]}>كل لعبة</Text>
           {played.length === 0 && <Text style={[font.small, { color: t.textMuted }]}>العب أي لعبة لتظهر هنا ✨</Text>}
           {played.map((g) => {

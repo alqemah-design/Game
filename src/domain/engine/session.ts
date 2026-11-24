@@ -20,6 +20,8 @@ export type SessionState = {
   mistakesThisRound: number;
   mistakesThisLevel: number;
   pointsThisLevel: number;
+  /** Rounds in which the hint had to appear. */
+  hintedRounds: number;
   /** Changes every time a fresh round should be generated (used as React key / generator seed). */
   roundKey: number;
 };
@@ -32,7 +34,8 @@ export type SessionAction =
   | { type: 'correct'; points: number; roundKey: number }
   | { type: 'wrong'; roundKey: number }
   | { type: 'restartRound'; roundKey: number }
-  | { type: 'next' }
+  /** Go to the next level; `level` lets adaptive difficulty skip ahead or repeat. */
+  | { type: 'next'; level?: number }
   | { type: 'replay' };
 
 export function startSession(level: number, roundsPerLevel: (level: number) => number): SessionState {
@@ -44,6 +47,7 @@ export function startSession(level: number, roundsPerLevel: (level: number) => n
     mistakesThisRound: 0,
     mistakesThisLevel: 0,
     pointsThisLevel: 0,
+    hintedRounds: 0,
     roundKey: 1,
   };
 }
@@ -67,11 +71,16 @@ export function sessionReducer(roundsPerLevel: (level: number) => number) {
       }
       case 'wrong':
         if (s.phase !== 'playing') return s;
-        return { ...s, mistakesThisRound: s.mistakesThisRound + 1, mistakesThisLevel: s.mistakesThisLevel + 1 };
+        return {
+          ...s,
+          mistakesThisRound: s.mistakesThisRound + 1,
+          mistakesThisLevel: s.mistakesThisLevel + 1,
+          hintedRounds: s.hintedRounds + (s.mistakesThisRound + 1 === HINT_AFTER ? 1 : 0),
+        };
       case 'restartRound':
         return { ...s, mistakesThisRound: 0, roundKey: s.roundKey + 1 };
       case 'next':
-        return { ...startSession(s.level + 1, roundsPerLevel), roundKey: s.roundKey + 1 };
+        return { ...startSession(Math.max(1, a.level ?? s.level + 1), roundsPerLevel), roundKey: s.roundKey + 1 };
       case 'replay':
         return { ...startSession(s.level, roundsPerLevel), roundKey: s.roundKey + 1 };
     }
@@ -80,3 +89,7 @@ export function sessionReducer(roundsPerLevel: (level: number) => number) {
 
 export const shouldHint = (s: SessionState) => s.mistakesThisRound >= HINT_AFTER;
 export const isPerfectLevel = (s: SessionState) => s.phase === 'levelComplete' && s.mistakesThisLevel === 0;
+
+/** 1 star for finishing, +1 with no hint needed, +1 with no mistake at all. */
+export const starsFor = (s: Pick<SessionState, 'mistakesThisLevel' | 'hintedRounds'>) =>
+  s.mistakesThisLevel === 0 ? 3 : s.hintedRounds === 0 ? 2 : 1;

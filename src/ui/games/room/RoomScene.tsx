@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/components/Text';
 import Svg, { Circle, ClipPath, Defs, Ellipse, G, Line, LinearGradient, Path, Polygon, RadialGradient, Rect, Stop } from 'react-native-svg';
 import Animated, { Easing, FadeIn, ZoomIn, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
-import { ROOM_SPOTS, roomItemName } from '@/domain/games/newGames';
+import { ROOM_SPOTS, roomItem } from '@/domain/games/newGames';
+import { useI18n } from '@/i18n';
 import { Pressy } from '../../components/Pressy';
 
 /** Room drawn in one-point perspective in a 400×320 box; vanishing point at (200,110). */
@@ -135,6 +136,7 @@ type Props = {
 
 /** A furnished room with things placed in it; each thing can be tapped. */
 export function RoomScene({ width, scene, dark, onTap, found = [], wrong = [], hintSpot }: Props) {
+  const { t: tr, name } = useI18n();
   const k = width / ROOM_W;
   return (
     <View style={[styles.frame, { width, height: ROOM_H * k }]}>
@@ -159,7 +161,7 @@ export function RoomScene({ width, scene, dark, onTap, found = [], wrong = [], h
         return (
           <Animated.View key={`${i}-${e}`} entering={ZoomIn.duration(250)} style={{ position: 'absolute', left, top, width: box, height: box }}>
             <Shake on={bad}>
-              <Pressy sound={false} onPress={() => onTap?.(i)} accessibilityLabel={roomItemName(e) || e}
+              <Pressy sound={false} onPress={() => onTap?.(i)} accessibilityLabel={roomItem(e) ? name(roomItem(e)!) : e}
                 style={[styles.item, { width: box, height: box, borderRadius: box }, ok && styles.found, hintSpot === i && styles.hint]}>
                 <Text style={{ fontSize: font, opacity: bad ? 0.5 : 1 }}>{e}</Text>
               </Pressy>
@@ -173,7 +175,7 @@ export function RoomScene({ width, scene, dark, onTap, found = [], wrong = [], h
             <Circle cx="276" cy="72" r="9" fill="#FEF9C3" />
             {[[230, 64], [248, 100], [286, 108], [262, 60]].map(([x, y]) => <Circle key={x} cx={x} cy={y} r="1.6" fill="#FFF" />)}
           </Svg>
-          <Text style={styles.darkText}>🌙 أُطفئت الأنوار…</Text>
+          <Text style={styles.darkText}>{tr('boards.lightsOff')}</Text>
         </Animated.View>
       )}
     </View>

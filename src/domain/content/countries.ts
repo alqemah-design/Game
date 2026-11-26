@@ -1,34 +1,30 @@
 export type Continent = 'asia' | 'africa' | 'europe' | 'americas' | 'oceania';
-export type Country = { code: string; ar: string; continent: Continent; flag: string };
+export type Country = { code: string; ar: string; en: string; continent: Continent; flag: string };
 
 /** Flag emoji from an ISO-3166 alpha-2 code (regional indicator symbols) – no image assets needed. */
 export const flagOf = (code: string) =>
   String.fromCodePoint(...code.toUpperCase().split('').map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 
-const raw: [string, string, Continent][] = [
-  ['SA', 'السعودية', 'asia'], ['AE', 'الإمارات', 'asia'], ['KW', 'الكويت', 'asia'], ['QA', 'قطر', 'asia'],
-  ['BH', 'البحرين', 'asia'], ['OM', 'عُمان', 'asia'], ['YE', 'اليمن', 'asia'], ['JO', 'الأردن', 'asia'],
-  ['PS', 'فلسطين', 'asia'], ['LB', 'لبنان', 'asia'], ['SY', 'سوريا', 'asia'], ['IQ', 'العراق', 'asia'],
-  ['EG', 'مصر', 'africa'], ['SD', 'السودان', 'africa'], ['LY', 'ليبيا', 'africa'], ['TN', 'تونس', 'africa'],
-  ['DZ', 'الجزائر', 'africa'], ['MA', 'المغرب', 'africa'], ['MR', 'موريتانيا', 'africa'], ['SO', 'الصومال', 'africa'],
-  ['TR', 'تركيا', 'asia'], ['IR', 'إيران', 'asia'], ['PK', 'باكستان', 'asia'], ['IN', 'الهند', 'asia'],
-  ['CN', 'الصين', 'asia'], ['JP', 'اليابان', 'asia'], ['KR', 'كوريا الجنوبية', 'asia'], ['ID', 'إندونيسيا', 'asia'],
-  ['MY', 'ماليزيا', 'asia'], ['TH', 'تايلاند', 'asia'], ['VN', 'فيتنام', 'asia'], ['PH', 'الفلبين', 'asia'],
-  ['BD', 'بنغلاديش', 'asia'], ['AF', 'أفغانستان', 'asia'],
-  ['NG', 'نيجيريا', 'africa'], ['ZA', 'جنوب أفريقيا', 'africa'], ['KE', 'كينيا', 'africa'], ['ET', 'إثيوبيا', 'africa'],
-  ['GH', 'غانا', 'africa'], ['SN', 'السنغال', 'africa'], ['CM', 'الكاميرون', 'africa'], ['TZ', 'تنزانيا', 'africa'],
-  ['GB', 'بريطانيا', 'europe'], ['FR', 'فرنسا', 'europe'], ['DE', 'ألمانيا', 'europe'], ['IT', 'إيطاليا', 'europe'],
-  ['ES', 'إسبانيا', 'europe'], ['PT', 'البرتغال', 'europe'], ['NL', 'هولندا', 'europe'], ['BE', 'بلجيكا', 'europe'],
-  ['CH', 'سويسرا', 'europe'], ['SE', 'السويد', 'europe'], ['NO', 'النرويج', 'europe'], ['FI', 'فنلندا', 'europe'],
-  ['DK', 'الدنمارك', 'europe'], ['GR', 'اليونان', 'europe'], ['PL', 'بولندا', 'europe'], ['UA', 'أوكرانيا', 'europe'],
-  ['IE', 'أيرلندا', 'europe'], ['AT', 'النمسا', 'europe'],
-  ['US', 'أمريكا', 'americas'], ['CA', 'كندا', 'americas'], ['MX', 'المكسيك', 'americas'], ['BR', 'البرازيل', 'americas'],
-  ['AR', 'الأرجنتين', 'americas'], ['CL', 'تشيلي', 'americas'], ['CO', 'كولومبيا', 'americas'], ['PE', 'بيرو', 'americas'],
-  ['AU', 'أستراليا', 'oceania'], ['NZ', 'نيوزيلندا', 'oceania'],
+const raw: [string, string, string, Continent][] = [
+  ['SA', 'السعودية', 'Saudi Arabia', 'asia'], ['AE', 'الإمارات', 'UAE', 'asia'], ['KW', 'الكويت', 'Kuwait', 'asia'], ['QA', 'قطر', 'Qatar', 'asia'],
+  ['BH', 'البحرين', 'Bahrain', 'asia'], ['OM', 'عُمان', 'Oman', 'asia'], ['YE', 'اليمن', 'Yemen', 'asia'], ['JO', 'الأردن', 'Jordan', 'asia'],
+  ['PS', 'فلسطين', 'Palestine', 'asia'], ['LB', 'لبنان', 'Lebanon', 'asia'], ['SY', 'سوريا', 'Syria', 'asia'], ['IQ', 'العراق', 'Iraq', 'asia'],
+  ['EG', 'مصر', 'Egypt', 'africa'], ['SD', 'السودان', 'Sudan', 'africa'], ['LY', 'ليبيا', 'Libya', 'africa'], ['TN', 'تونس', 'Tunisia', 'africa'],
+  ['DZ', 'الجزائر', 'Algeria', 'africa'], ['MA', 'المغرب', 'Morocco', 'africa'], ['MR', 'موريتانيا', 'Mauritania', 'africa'], ['SO', 'الصومال', 'Somalia', 'africa'],
+  ['TR', 'تركيا', 'Turkey', 'asia'], ['IR', 'إيران', 'Iran', 'asia'], ['PK', 'باكستان', 'Pakistan', 'asia'], ['IN', 'الهند', 'India', 'asia'],
+  ['CN', 'الصين', 'China', 'asia'], ['JP', 'اليابان', 'Japan', 'asia'], ['KR', 'كوريا الجنوبية', 'South Korea', 'asia'], ['ID', 'إندونيسيا', 'Indonesia', 'asia'],
+  ['MY', 'ماليزيا', 'Malaysia', 'asia'], ['TH', 'تايلاند', 'Thailand', 'asia'], ['VN', 'فيتنام', 'Vietnam', 'asia'], ['PH', 'الفلبين', 'Philippines', 'asia'],
+  ['BD', 'بنغلاديش', 'Bangladesh', 'asia'], ['AF', 'أفغانستان', 'Afghanistan', 'asia'],
+  ['NG', 'نيجيريا', 'Nigeria', 'africa'], ['ZA', 'جنوب أفريقيا', 'South Africa', 'africa'], ['KE', 'كينيا', 'Kenya', 'africa'], ['ET', 'إثيوبيا', 'Ethiopia', 'africa'],
+  ['GH', 'غانا', 'Ghana', 'africa'], ['SN', 'السنغال', 'Senegal', 'africa'], ['CM', 'الكاميرون', 'Cameroon', 'africa'], ['TZ', 'تنزانيا', 'Tanzania', 'africa'],
+  ['GB', 'بريطانيا', 'United Kingdom', 'europe'], ['FR', 'فرنسا', 'France', 'europe'], ['DE', 'ألمانيا', 'Germany', 'europe'], ['IT', 'إيطاليا', 'Italy', 'europe'],
+  ['ES', 'إسبانيا', 'Spain', 'europe'], ['PT', 'البرتغال', 'Portugal', 'europe'], ['NL', 'هولندا', 'Netherlands', 'europe'], ['BE', 'بلجيكا', 'Belgium', 'europe'],
+  ['CH', 'سويسرا', 'Switzerland', 'europe'], ['SE', 'السويد', 'Sweden', 'europe'], ['NO', 'النرويج', 'Norway', 'europe'], ['FI', 'فنلندا', 'Finland', 'europe'],
+  ['DK', 'الدنمارك', 'Denmark', 'europe'], ['GR', 'اليونان', 'Greece', 'europe'], ['PL', 'بولندا', 'Poland', 'europe'], ['UA', 'أوكرانيا', 'Ukraine', 'europe'],
+  ['IE', 'أيرلندا', 'Ireland', 'europe'], ['AT', 'النمسا', 'Austria', 'europe'],
+  ['US', 'أمريكا', 'United States', 'americas'], ['CA', 'كندا', 'Canada', 'americas'], ['MX', 'المكسيك', 'Mexico', 'americas'], ['BR', 'البرازيل', 'Brazil', 'americas'],
+  ['AR', 'الأرجنتين', 'Argentina', 'americas'], ['CL', 'تشيلي', 'Chile', 'americas'], ['CO', 'كولومبيا', 'Colombia', 'americas'], ['PE', 'بيرو', 'Peru', 'americas'],
+  ['AU', 'أستراليا', 'Australia', 'oceania'], ['NZ', 'نيوزيلندا', 'New Zealand', 'oceania'],
 ];
 
-export const COUNTRIES: readonly Country[] = raw.map(([code, ar, continent]) => ({ code, ar, continent, flag: flagOf(code) }));
-
-export const CONTINENT_AR: Record<Continent, string> = {
-  asia: 'آسيا', africa: 'أفريقيا', europe: 'أوروبا', americas: 'الأمريكتان', oceania: 'أوقيانوسيا',
-};
+export const COUNTRIES: readonly Country[] = raw.map(([code, ar, en, continent]) => ({ code, ar, en, continent, flag: flagOf(code) }));

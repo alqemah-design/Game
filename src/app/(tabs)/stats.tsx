@@ -1,26 +1,27 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/components/Text';
-import { GAMES, SKILL_AR, type Skill } from '@/domain/games/catalog';
+import { GAMES, SKILLS } from '@/domain/games/catalog';
+import { useI18n } from '@/i18n';
 import { dayKey } from '@/domain/progress';
 import { useActiveProfile } from '@/data/progressStore';
 import { Screen } from '@/ui/components/Screen';
 import { font, radius, raised, useTheme } from '@/ui/theme/theme';
 import { Owl } from '@/ui/components/Owl';
 
-const DAYS_AR = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
 
 export default function Stats() {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const p = useActiveProfile()!;
   const [now] = useState(() => Date.now());
   const week = Array.from({ length: 7 }, (_, i) => {
     const d = now - (6 - i) * 86400000;
-    return { label: DAYS_AR[new Date(d).getDay()], ...(p.activity[dayKey(d)] ?? { levels: 0, points: 0 }) };
+    return { label: tr(`stats.days.d${new Date(d).getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6}`), ...(p.activity[dayKey(d)] ?? { levels: 0, points: 0 }) };
   });
   const maxLevels = Math.max(1, ...week.map((d) => d.levels));
   const played = GAMES.filter((g) => p.games[g.id]);
-  const skills = (Object.keys(SKILL_AR) as Skill[]).map((s) => ({
+  const skills = SKILLS.map((s) => ({
     skill: s,
     levels: GAMES.filter((g) => g.skill === s).reduce((n, g) => n + (p.games[g.id]?.completed ?? 0), 0),
   }));
@@ -29,15 +30,15 @@ export default function Stats() {
   return (
     <Screen scenery="#93C5FD">
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-        <Text style={[font.title, { color: t.text }]}>إنجازاتي 📊</Text>
+        <Text style={[font.title, { color: t.text }]}>{tr('stats.title')}</Text>
         {played.length === 0 && (
           <View style={[styles.card, raised(t), { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
             <Owl size={90} mood="wave" />
-            <Text style={[font.body, { color: t.text, flex: 1, lineHeight: 26 }]}>أهلًا! العب أول لعبة، وسأرسم لك هنا نجومك ومهاراتك وأيامك 🌟</Text>
+            <Text style={[font.body, { color: t.text, flex: 1, lineHeight: 26 }]}>{tr('stats.emptyOwl')}</Text>
           </View>
         )}
         <View style={styles.tiles}>
-          {[['⭐', p.stars, 'نجمة'], ['💎', p.points, 'نقطة'], ['🔥', p.bestStreak, 'أفضل سلسلة'], ['🎮', played.length, 'لعبة']].map(([e, v, l]) => (
+          {[['⭐', p.stars, tr('stats.stars')], ['💎', p.points, tr('stats.points')], ['🔥', p.bestStreak, tr('stats.bestStreak')], ['🎮', played.length, tr('stats.games')]].map(([e, v, l]) => (
             <View key={String(l)} style={[styles.tile, raised(t)]}>
               <Text style={{ fontSize: 28 }}>{e}</Text>
               <Text style={[font.h2, { color: t.text }]}>{v}</Text>
@@ -47,10 +48,10 @@ export default function Stats() {
         </View>
 
         <View style={[styles.card, raised(t)]}>
-          <Text style={[font.body, { color: t.text, marginBottom: 12 }]}>مستويات هذا الأسبوع</Text>
+          <Text style={[font.body, { color: t.text, marginBottom: 12 }]}>{tr('stats.thisWeek')}</Text>
           <View style={styles.chart}>
             {week.map((d, i) => (
-              <View key={i} style={styles.col} accessibilityLabel={`${d.label}: ${d.levels} مستوى`}>
+              <View key={i} style={styles.col} accessibilityLabel={tr('stats.dayLevels', { day: d.label, count: d.levels })}>
                 <Text style={[font.small, { color: t.textMuted }]}>{d.levels || ''}</Text>
                 <View style={[styles.barTrack, { backgroundColor: t.border }]}>
                   <View style={{ height: `${(d.levels / maxLevels) * 100}%`, backgroundColor: i === 6 ? t.primary : t.hint, borderRadius: 6 }} />
@@ -62,10 +63,10 @@ export default function Stats() {
         </View>
 
         <View style={[styles.card, raised(t)]}>
-          <Text style={[font.body, { color: t.text, marginBottom: 12 }]}>المهارات</Text>
+          <Text style={[font.body, { color: t.text, marginBottom: 12 }]}>{tr('stats.skills')}</Text>
           {skills.map((s) => (
             <View key={s.skill} style={styles.skillRow}>
-              <Text style={[font.small, { color: t.text, width: 80 }]}>{SKILL_AR[s.skill]}</Text>
+              <Text style={[font.small, { color: t.text, width: 80 }]}>{tr(`skills.${s.skill}`)}</Text>
               <View style={[styles.hTrack, { backgroundColor: t.border }]}>
                 <View style={{ width: `${(s.levels / maxSkill) * 100}%`, height: '100%', backgroundColor: t.success, borderRadius: 6 }} />
               </View>
@@ -75,16 +76,16 @@ export default function Stats() {
         </View>
 
         <View style={[styles.card, raised(t)]}>
-          <Text style={[font.body, { color: t.text, marginBottom: 8 }]}>كل لعبة</Text>
-          {played.length === 0 && <Text style={[font.small, { color: t.textMuted }]}>العب أي لعبة لتظهر هنا ✨</Text>}
+          <Text style={[font.body, { color: t.text, marginBottom: 8 }]}>{tr('stats.eachGame')}</Text>
+          {played.length === 0 && <Text style={[font.small, { color: t.textMuted }]}>{tr('stats.playAny')}</Text>}
           {played.map((g) => {
             const gp = p.games[g.id]!;
             const acc = gp.correct + gp.mistakes ? Math.round((gp.correct / (gp.correct + gp.mistakes)) * 100) : 0;
             return (
               <View key={g.id} style={[styles.gameRow, { borderColor: t.border }]}>
                 <Text style={{ fontSize: 24 }}>{g.emoji}</Text>
-                <Text style={[font.small, { color: t.text, flex: 1 }]}>{g.title}</Text>
-                <Text style={[font.small, { color: t.textMuted }]}>مستوى {gp.completed} • دقة {acc}%</Text>
+                <Text style={[font.small, { color: t.text, flex: 1 }]}>{tr(`games.${g.id}.title`)}</Text>
+                <Text style={[font.small, { color: t.textMuted }]}>{tr('stats.gameLine', { level: gp.completed, accuracy: acc })}</Text>
               </View>
             );
           })}

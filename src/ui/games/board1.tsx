@@ -4,6 +4,7 @@ import { Text } from '@/ui/components/Text';
 import Animated, { FadeIn, ZoomIn, useAnimatedStyle, useSharedValue, withTiming, interpolate } from 'react-native-reanimated';
 import Svg, { Circle, Defs, LinearGradient, Path, Pattern, Rect, Stop } from 'react-native-svg';
 import * as B from '@/domain/games/boardGames';
+import { useI18n } from '@/i18n';
 import { COLORS } from '@/domain/content/shapes';
 import { play } from '@/audio/sfx';
 import { speak } from '@/audio/speech';
@@ -16,11 +17,13 @@ const PAIR_COLORS = ['#F87171', '#60A5FA', '#34D399', '#FBBF24', '#A78BFA', '#F4
 
 function Prompt({ children }: { children: string }) {
   const t = useTheme();
-  return <Text style={[font.body, { color: t.textMuted, textAlign: 'center', marginVertical: 8, writingDirection: 'rtl' }]}>{children}</Text>;
+  const { dir } = useI18n();
+  return <Text style={[font.body, { color: t.textMuted, textAlign: 'center', marginVertical: 8, writingDirection: dir }]}>{children}</Text>;
 }
 
 // ── Shape match: tap a shape, then tap its outline ───────────────────────
 export function ShapeMatchGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const board = useMemo(() => B.shapeBoard(api.genLevel, api.rng), [api.roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [selected, setSelected] = useState<string | null>(null);
@@ -45,10 +48,10 @@ export function ShapeMatchGame({ api }: { api: GameApi }) {
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      <Prompt>اختر شكلاً ثم ضعه في مكانه</Prompt>
+      <Prompt>{tr('boards.shapePrompt')}</Prompt>
       <View style={[styles.area, { backgroundColor: t.card }]}>
         {board.slots.map((p) => (
-          <Pressy key={p.id} sound={false} onPress={() => tapSlot(p.id)} accessibilityLabel="مكان الشكل" style={[styles.cell, hintId === p.id && { backgroundColor: t.hintBg }]}>
+          <Pressy key={p.id} sound={false} onPress={() => tapSlot(p.id)} accessibilityLabel={tr('boards.shapeSlot')} style={[styles.cell, hintId === p.id && { backgroundColor: t.hintBg }]}>
             {placed.includes(p.id)
               ? <Animated.View entering={ZoomIn}><ShapeIcon shape={p.shape} color={COLORS[p.color].hex} size={size} /></Animated.View>
               : <ShapeIcon shape={p.shape} color={api.genLevel >= 9 ? COLORS[p.color].hex : t.textMuted} size={size} outline />}
@@ -57,7 +60,7 @@ export function ShapeMatchGame({ api }: { api: GameApi }) {
       </View>
       <View style={[styles.area, { backgroundColor: 'transparent' }]}>
         {board.pieces.map((p) => !placed.includes(p.id) && (
-          <Pressy key={p.id} onPress={() => setSelected(p.id)} accessibilityLabel="شكل"
+          <Pressy key={p.id} onPress={() => setSelected(p.id)} accessibilityLabel={tr('boards.shape')}
             style={[styles.cell, { borderColor: selected === p.id ? t.primary : 'transparent', borderWidth: 4, borderRadius: radius.md }, hintId === p.id && { backgroundColor: t.hintBg }]}>
             <ShapeIcon shape={p.shape} color={COLORS[p.color].hex} size={size} />
           </Pressy>
@@ -82,6 +85,7 @@ function LetterTile({ l, onPress, active, matched, sel, hint }: { l: string; onP
 
 // ── Capital ↔ small ─────────────────────────────────────────────────────
 export function CapitalSmallGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const { capitals, smalls } = useMemo(() => B.capitalPairs(api.genLevel, api.rng), [api.roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [sel, setSel] = useState<string | null>(null);
   const [matched, setMatched] = useState<string[]>([]);
@@ -98,7 +102,7 @@ export function CapitalSmallGame({ api }: { api: GameApi }) {
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      <Prompt>اختر الحرف الكبير ثم الصغير الذي يشبهه</Prompt>
+      <Prompt>{tr('boards.casePrompt')}</Prompt>
       <View style={styles.columns}>
         <View style={styles.col}>{capitals.map((c) => <LetterTile key={c} l={c} active={sel === c} matched={matched} sel={sel} hint={api.hint} onPress={() => !matched.includes(c) && setSel(c)} />)}</View>
         <View style={styles.col}>{smalls.map((s) => <LetterTile key={s} l={s} active={false} matched={matched} sel={sel} hint={api.hint} onPress={() => tapSmall(s)} />)}</View>
@@ -129,13 +133,14 @@ function CardBack({ size }: { size: number }) {
 }
 
 function Card({ symbol, up, done, onPress, size }: { symbol: string; up: boolean; done: boolean; onPress: () => void; size: number }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const v = useSharedValue(0);
   useEffect(() => { v.set(withTiming(up || done ? 1 : 0, { duration: 250 })); }, [up, done, v]);
   const front = useAnimatedStyle(() => ({ transform: [{ perspective: 600 }, { rotateY: `${interpolate(v.value, [0, 1], [180, 360])}deg` }], opacity: v.value > 0.5 ? 1 : 0 }));
   const back = useAnimatedStyle(() => ({ transform: [{ perspective: 600 }, { rotateY: `${interpolate(v.value, [0, 1], [0, 180])}deg` }], opacity: v.value > 0.5 ? 0 : 1 }));
   return (
-    <Pressy sound={false} onPress={onPress} style={{ width: size, height: size * 1.2 }} accessibilityLabel={up || done ? symbol : 'بطاقة مقلوبة'}>
+    <Pressy sound={false} onPress={onPress} style={{ width: size, height: size * 1.2 }} accessibilityLabel={up || done ? symbol : tr('boards.cardDown')}>
       <Animated.View style={[styles.card, styles.cardBack, back]}><CardBack size={size} /></Animated.View>
       <Animated.View style={[styles.card, raised(t, done ? t.successBg : t.card), front]}><Text style={{ fontSize: size * 0.5 }}>{symbol}</Text></Animated.View>
     </Pressy>
@@ -143,6 +148,7 @@ function Card({ symbol, up, done, onPress, size }: { symbol: string; up: boolean
 }
 
 export function MemoryGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const { cards, columns } = useMemo(() => B.memoryDeck(api.genLevel, api.rng), [api.roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [open, setOpen] = useState<number[]>([]);
@@ -177,19 +183,20 @@ export function MemoryGame({ api }: { api: GameApi }) {
 
   return (
     <View style={{ flex: 1, padding: 16 }} onLayout={(e) => setW(e.nativeEvent.layout.width - 32)}>
-      <Prompt>{`اقلب بطاقتين متشابهتين • المحاولات: ${moves}`}</Prompt>
+      <Prompt>{tr('boards.memoryPrompt', { moves })}</Prompt>
       {size > 0 && (
         <View style={[styles.memGrid, { gap: 10 }]}>
           {cards.map((c, i) => <Card key={c.id} symbol={c.symbol} size={size} up={open.includes(i)} done={done.includes(c.symbol)} onPress={() => flip(i)} />)}
         </View>
       )}
-      {api.hint && <Text style={[font.small, { color: t.textMuted, textAlign: 'center' }]}>تذكّر أماكن البطاقات التي رأيتها</Text>}
+      {api.hint && <Text style={[font.small, { color: t.textMuted, textAlign: 'center' }]}>{tr('boards.memoryHint')}</Text>}
     </View>
   );
 }
 
 // ── Word builder ─────────────────────────────────────────────────────────
 export function WordBuilderGame({ api }: { api: GameApi }) {
+  const { lang } = useI18n();
   const t = useTheme();
   const { word, tiles } = useMemo(() => B.wordChallenge(api.genLevel, api.rng), [api.roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [picked, setPicked] = useState<number[]>([]);
@@ -220,7 +227,7 @@ export function WordBuilderGame({ api }: { api: GameApi }) {
     <View style={{ flex: 1, padding: 16, alignItems: 'center' }}>
       <Pressy sound={false} onPress={() => speak(word.word.toLowerCase(), 'en')} style={{ alignItems: 'center' }}>
         <Text style={{ fontSize: 110 }}>{word.emoji}</Text>
-        <Text style={[font.body, { color: t.textMuted }]}>{word.ar}</Text>
+        {lang === 'ar' && <Text style={[font.body, { color: t.textMuted }]}>{word.ar}</Text>}
       </Pressy>
       <View style={styles.slots}>
         {word.word.split('').map((_, i) => (
@@ -244,6 +251,7 @@ export function WordBuilderGame({ api }: { api: GameApi }) {
 
 // ── Sorting numbers ──────────────────────────────────────────────────────
 export function SortingGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const nums = useMemo(() => B.sortingSet(api.genLevel, api.rng), [api.roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const sorted = useMemo(() => [...nums].sort((a, b) => a - b), [nums]);
@@ -259,7 +267,7 @@ export function SortingGame({ api }: { api: GameApi }) {
   const big = nums.length <= 5;
   return (
     <View style={{ flex: 1, padding: 16 }}>
-      <Prompt>اضغط الأرقام من الأصغر إلى الأكبر</Prompt>
+      <Prompt>{tr('boards.sortPrompt')}</Prompt>
       <View style={[styles.slots, { flexWrap: 'wrap', minHeight: 70 }]}>
         {done.map((n) => <Animated.View key={n} entering={ZoomIn} style={[styles.chip, { backgroundColor: t.successBg }]}><Text style={[font.h2, { color: t.text }]}>{n}</Text></Animated.View>)}
       </View>

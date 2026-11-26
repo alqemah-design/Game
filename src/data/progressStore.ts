@@ -6,6 +6,7 @@ import {
   type Artwork, type LevelResult, type Profile, type ProfileSettings, type ProgressEvents,
 } from '@/domain/progress';
 import { kvStorage } from './storage';
+import type { LanguagePref } from '@/i18n';
 
 /**
  * The single source of truth for progress (replaces localStorage + the Base44 UserProgress entity).
@@ -15,6 +16,8 @@ type State = {
   profiles: Record<string, Profile>;
   activeId: string | null;
   colorScheme: 'system' | 'light' | 'dark';
+  /** Interface language; Arabic by default (the app's home language). */
+  language: LanguagePref;
 };
 
 type Actions = {
@@ -34,6 +37,7 @@ type Actions = {
   resetProgress: () => void;
   wipeEverything: () => void;
   setColorScheme: (s: State['colorScheme']) => void;
+  setLanguage: (l: LanguagePref) => void;
 };
 
 const newId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -53,6 +57,7 @@ export const useProgress = create<State & Actions>()(
         profiles: {},
         activeId: null,
         colorScheme: 'system',
+        language: 'ar',
 
         addProfile: (name, avatar) => {
           const id = newId();
@@ -100,13 +105,14 @@ export const useProgress = create<State & Actions>()(
           updateActive((p) => ({ ...createProfile(p.id, p.name, p.createdAt, p.avatar), settings: p.settings })),
         wipeEverything: () => set({ profiles: {}, activeId: null }),
         setColorScheme: (colorScheme) => set({ colorScheme }),
+        setLanguage: (language) => set({ language }),
       };
     },
     {
       name: 'kbg.progress',
       version: 1,
       storage: createJSONStorage(() => kvStorage),
-      partialize: ({ profiles, activeId, colorScheme }) => ({ profiles, activeId, colorScheme }),
+      partialize: ({ profiles, activeId, colorScheme, language }) => ({ profiles, activeId, colorScheme, language }),
       // Future schema changes go here, keyed by the persisted version.
       migrate: (persisted) => persisted as State,
       // Validate whatever is on disk before it reaches the UI.
@@ -115,7 +121,8 @@ export const useProgress = create<State & Actions>()(
         const profiles = normalizeProfiles(p.profiles);
         const activeId = p.activeId && profiles[p.activeId] ? p.activeId : (Object.keys(profiles)[0] ?? null);
         const colorScheme = p.colorScheme === 'light' || p.colorScheme === 'dark' ? p.colorScheme : 'system';
-        return { ...current, profiles, activeId, colorScheme };
+        const language = p.language === 'en' || p.language === 'system' ? p.language : 'ar';
+        return { ...current, profiles, activeId, colorScheme, language };
       },
     },
   ),

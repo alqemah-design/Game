@@ -3,7 +3,7 @@
  * pages beyond the first three unlock through achievements (see rewards.ts).
  */
 export type Region = { id: string; d: string };
-export type ColoringPage = { id: string; title: string; emoji: string; regions: Region[] };
+export type ColoringPage = { id: string; emoji: string; regions: Region[] };
 
 const circle = (cx: number, cy: number, r: number) => `M${cx - r} ${cy} a${r} ${r} 0 1 0 ${2 * r} 0 a${r} ${r} 0 1 0 ${-2 * r} 0 Z`;
 const ellipse = (cx: number, cy: number, rx: number, ry: number) => `M${cx - rx} ${cy} a${rx} ${ry} 0 1 0 ${2 * rx} 0 a${rx} ${ry} 0 1 0 ${-2 * rx} 0 Z`;
@@ -11,7 +11,7 @@ const rect = (x: number, y: number, w: number, h: number) => `M${x} ${y} h${w} v
 
 export const COLORING_PAGES: readonly ColoringPage[] = [
   {
-    id: 'cat', title: 'قطة', emoji: '🐱',
+    id: 'cat', emoji: '🐱',
     regions: [
       { id: 'body', d: ellipse(150, 215, 75, 60) },
       { id: 'tail', d: 'M215 230 Q275 210 262 150 Q256 135 246 150 Q252 200 205 210 Z' },
@@ -24,7 +24,7 @@ export const COLORING_PAGES: readonly ColoringPage[] = [
     ],
   },
   {
-    id: 'sun', title: 'شمس', emoji: '☀️',
+    id: 'sun', emoji: '☀️',
     regions: [
       { id: 'sky', d: rect(5, 5, 290, 290) },
       { id: 'rays', d: Array.from({ length: 12 }, (_, i) => {
@@ -39,7 +39,7 @@ export const COLORING_PAGES: readonly ColoringPage[] = [
     ],
   },
   {
-    id: 'car', title: 'سيارة', emoji: '🚗',
+    id: 'car', emoji: '🚗',
     regions: [
       { id: 'road', d: rect(5, 230, 290, 60) },
       { id: 'body', d: 'M30 200 L30 160 Q35 145 60 142 L100 140 L130 100 Q138 92 150 92 L210 92 Q225 92 232 105 L255 140 Q275 145 275 165 L275 200 Z' },
@@ -51,7 +51,7 @@ export const COLORING_PAGES: readonly ColoringPage[] = [
     ],
   },
   {
-    id: 'fish', title: 'سمكة', emoji: '🐟',
+    id: 'fish', emoji: '🐟',
     regions: [
       { id: 'water', d: rect(5, 5, 290, 290) },
       { id: 'body', d: 'M50 150 Q120 70 210 150 Q120 230 50 150 Z' },
@@ -63,7 +63,7 @@ export const COLORING_PAGES: readonly ColoringPage[] = [
     ],
   },
   {
-    id: 'butterfly', title: 'فراشة', emoji: '🦋',
+    id: 'butterfly', emoji: '🦋',
     regions: [
       { id: 'wingTL', d: 'M145 140 Q70 30 40 90 Q30 140 145 150 Z' },
       { id: 'wingTR', d: 'M155 140 Q230 30 260 90 Q270 140 155 150 Z' },
@@ -75,7 +75,7 @@ export const COLORING_PAGES: readonly ColoringPage[] = [
     ],
   },
   {
-    id: 'house', title: 'بيت', emoji: '🏠',
+    id: 'house', emoji: '🏠',
     regions: [
       { id: 'grass', d: rect(5, 250, 290, 45) },
       { id: 'wall', d: rect(60, 140, 180, 110) },
@@ -87,7 +87,7 @@ export const COLORING_PAGES: readonly ColoringPage[] = [
     ],
   },
   {
-    id: 'rocket', title: 'صاروخ', emoji: '🚀',
+    id: 'rocket', emoji: '🚀',
     regions: [
       { id: 'space', d: rect(5, 5, 290, 290) },
       { id: 'body', d: 'M150 30 Q200 80 195 200 L105 200 Q100 80 150 30 Z' },
@@ -98,7 +98,7 @@ export const COLORING_PAGES: readonly ColoringPage[] = [
     ],
   },
   {
-    id: 'flower', title: 'زهرة', emoji: '🌸',
+    id: 'flower', emoji: '🌸',
     regions: [
       ...Array.from({ length: 6 }, (_, i) => {
         const a = (i * Math.PI) / 3;
@@ -110,7 +110,7 @@ export const COLORING_PAGES: readonly ColoringPage[] = [
     ],
   },
   {
-    id: 'castle', title: 'قلعة', emoji: '🏰',
+    id: 'castle', emoji: '🏰',
     regions: [
       { id: 'wall', d: rect(60, 130, 180, 140) },
       { id: 'towerL', d: 'M30 270 L30 90 L45 90 L45 75 L60 75 L60 90 L75 90 L75 75 L90 75 L90 270 Z' },
@@ -121,7 +121,7 @@ export const COLORING_PAGES: readonly ColoringPage[] = [
     ],
   },
   {
-    id: 'dragon', title: 'تنين', emoji: '🐉',
+    id: 'dragon', emoji: '🐉',
     regions: [
       { id: 'body', d: ellipse(150, 190, 80, 55) },
       { id: 'belly', d: ellipse(150, 205, 45, 30) },

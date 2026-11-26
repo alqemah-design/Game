@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native'
 import { Text } from '@/ui/components/Text';
 import { router, useFocusEffect } from 'expo-router';
 import { TimeUp } from '@/ui/components/TimeUp';
+import { useI18n, type TKey } from '@/i18n';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { GAMES, GAME_BY_ID, type AgeBand, type GameMeta } from '@/domain/games/catalog';
 import { dayKey, gameOfTheDay, minutesLeftToday } from '@/domain/progress';
@@ -17,25 +18,23 @@ import { Pressy } from '@/ui/components/Pressy';
 import { Screen } from '@/ui/components/Screen';
 import { font, radius, raised, useTheme } from '@/ui/theme/theme';
 
-const AGE_TITLES: Record<AgeBand, string> = { '3-5': 'للصغار ٣–٥ 🧸', '5-7': 'للمتعلمين ٥–٧ 📚', '7-9': 'للأذكياء ٧–٩ 🚀' };
+const AGE_BANDS: AgeBand[] = ['3-5', '5-7', '7-9'];
 const DECOR: Record<string, string> = { balloon: '🎈', rainbow: '🌈', trophy: '🏆', medal: '🏅', star: '🌟' };
 
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? 'صباح الخير' : h < 18 ? 'مرحبًا' : 'مساء الخير';
-}
+const greetingKey = (hour: number) => (hour < 12 ? 'home.morning' : hour < 18 ? 'home.hello' : 'home.evening') as TKey;
 
 const openGame = (id: GameId) => router.push(id === 'coloring' ? '/art' : { pathname: '/game/[id]', params: { id } });
 
 /** Big shortcut card: continue the last game, or the game of the day. */
 function HeroCard({ game, kicker, note }: { game: GameMeta; kicker: string; note: string }) {
+  const { t: tr } = useI18n();
   return (
-    <Pressy onPress={() => openGame(game.id)} accessibilityLabel={`${kicker}: ${game.title}`} style={[styles.hero, { backgroundColor: game.color }]}>
+    <Pressy onPress={() => openGame(game.id)} accessibilityLabel={`${kicker}: ${tr(`games.${game.id}.title`)}`} style={[styles.hero, { backgroundColor: game.color }]}>
       <View pointerEvents="none" style={styles.shine} />
       <View style={[styles.badge, { width: 50, height: 50 }]}><Text style={[styles.cardEmoji, { fontSize: 28 }]}>{game.emoji}</Text></View>
       <View style={{ flex: 1 }}>
         <Text style={styles.heroKicker}>{kicker}</Text>
-        <Text style={styles.cardTitle} numberOfLines={1}>{game.title}</Text>
+        <Text style={styles.cardTitle} numberOfLines={1}>{tr(`games.${game.id}.title`)}</Text>
         <Text style={styles.cardSub} numberOfLines={1}>{note}</Text>
       </View>
     </Pressy>
@@ -43,6 +42,7 @@ function HeroCard({ game, kicker, note }: { game: GameMeta; kicker: string; note
 }
 
 export default function Home() {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const p = useActiveProfile()!;
   const [gate, setGate] = useState(false);
@@ -66,29 +66,29 @@ export default function Home() {
     <Screen scenery="#86EFAC">
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         <View style={styles.header}>
-          <Pressy onPress={() => router.push('/avatar')} accessibilityLabel="تعديل الشخصية" style={[styles.avatar, { backgroundColor: t.cardAlt }]}>
+          <Pressy onPress={() => router.push('/avatar')} accessibilityLabel={tr('home.editAvatar')} style={[styles.avatar, { backgroundColor: t.cardAlt }]}>
             <AvatarView avatar={p.avatar} size={76} />
           </Pressy>
           <View style={{ flex: 1 }}>
-            <Text style={[font.small, { color: t.textMuted }]}>{greeting()}</Text>
+            <Text style={[font.small, { color: t.textMuted }]}>{tr(greetingKey(new Date(now).getHours()))}</Text>
             <Text style={[font.title, { color: t.text }]} numberOfLines={1}>{p.name} {decorations.map((d) => DECOR[d]).join('')}</Text>
             <Text style={[font.body, { color: t.text }]}>⭐ {p.stars}   💎 {p.points}</Text>
           </View>
-          <Pressy onPress={() => setGate(true)} accessibilityLabel="إعدادات الأهل" style={[styles.gear, { backgroundColor: t.card }]}>
+          <Pressy onPress={() => setGate(true)} accessibilityLabel={tr('home.parentSettings')} style={[styles.gear, { backgroundColor: t.card }]}>
             <Text style={{ fontSize: 26 }}>⚙️</Text>
-            {hasArabic === false && <View style={styles.alertDot} accessibilityLabel="تنبيه للأهل" />}
+            {hasArabic === false && <View style={styles.alertDot} accessibilityLabel={tr('home.parentAlert')} />}
           </Pressy>
         </View>
 
         <View style={styles.heroRow}>
-          {last && <HeroCard game={last} kicker="▶ تابع اللعب" note={`المستوى ${p.games[last.id]?.level ?? 1}`} />}
-          <HeroCard game={today} kicker="✨ لعبة اليوم" note="نقاط مضاعفة ×٢" />
+          {last && <HeroCard game={last} kicker={tr('home.continue')} note={tr('common.level', { level: p.games[last.id]?.level ?? 1 })} />}
+          <HeroCard game={today} kicker={tr('home.gameOfDay')} note={tr('home.doublePoints')} />
         </View>
 
-        <Pressy onPress={() => router.push('/rewards')} style={[styles.rewards, raised(t)]} accessibilityLabel="الملصقات والإنجازات">
+        <Pressy onPress={() => router.push('/rewards')} style={[styles.rewards, raised(t)]} accessibilityLabel={tr('home.stickersAndAchievements')}>
           <View style={styles.rewardsTop}>
-            <Text style={[font.body, { color: t.text }]}>ملصقاتي {stickers.length}/15</Text>
-            {next && <Text style={[font.small, { color: t.textMuted }]}>التالي {next.emoji} عند {next.points}</Text>}
+            <Text style={[font.body, { color: t.text }]}>{tr('home.myStickers', { count: stickers.length })}</Text>
+            {next && <Text style={[font.small, { color: t.textMuted }]}>{tr('home.nextSticker', { emoji: next.emoji, points: next.points })}</Text>}
           </View>
           <View style={[styles.bar, { backgroundColor: t.border }]}>
             <View style={[styles.barFill, { width: `${Math.round(pct * 100)}%`, backgroundColor: t.hint }]} />
@@ -96,9 +96,9 @@ export default function Home() {
           <Text style={{ fontSize: 26, marginTop: 6 }} numberOfLines={1}>{stickers.map((s) => s.emoji).join(' ') || '🔒'}</Text>
         </Pressy>
 
-        {(Object.keys(AGE_TITLES) as AgeBand[]).map((band, bi) => (
+        {AGE_BANDS.map((band, bi) => (
           <View key={band} style={{ marginTop: 20 }}>
-            <Text style={[font.h2, { color: t.text, marginBottom: 10 }]}>{AGE_TITLES[band]}</Text>
+            <Text style={[font.h2, { color: t.text, marginBottom: 10 }]}>{tr(`home.age.${band}`)}</Text>
             <View style={styles.grid}>
               {GAMES.filter((g) => g.ages === band).map((g, i) => {
                 const level = p.games[g.id]?.level ?? 1;
@@ -106,16 +106,16 @@ export default function Home() {
                   <Animated.View key={g.id} entering={FadeInUp.delay(bi * 120 + i * 50)} style={{ width: `${100 / cols}%`, padding: 6 }}>
                     <Pressy
                       onPress={() => openGame(g.id)}
-                      accessibilityLabel={`${g.title}، المستوى ${level}`}
+                      accessibilityLabel={tr('home.cardLabel', { title: tr(`games.${g.id}.title`), level })}
                       style={[styles.card, { backgroundColor: g.color }]}
                     >
                       <View pointerEvents="none" style={styles.bubbleBig} />
                       <View pointerEvents="none" style={styles.bubbleSmall} />
                       <View pointerEvents="none" style={styles.shine} />
                       <View style={styles.badge}><Text style={styles.cardEmoji}>{g.emoji}</Text></View>
-                      <Text style={styles.cardTitle} numberOfLines={2}>{g.title}</Text>
-                      <Text style={styles.cardSub} numberOfLines={1}>{g.subtitle}</Text>
-                      {g.id !== 'coloring' && <View style={styles.levelPill}><Text style={styles.levelText}>المستوى {level}</Text></View>}
+                      <Text style={styles.cardTitle} numberOfLines={2}>{tr(`games.${g.id}.title`)}</Text>
+                      <Text style={styles.cardSub} numberOfLines={1}>{tr(`games.${g.id}.subtitle`)}</Text>
+                      {g.id !== 'coloring' && <View style={styles.levelPill}><Text style={styles.levelText}>{tr('common.level', { level })}</Text></View>}
                     </Pressy>
                   </Animated.View>
                 );

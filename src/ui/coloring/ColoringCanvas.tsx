@@ -6,6 +6,7 @@ import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import type { Artwork, ArtStroke } from '@/domain/progress';
 import type { ColoringPage } from '@/domain/content/coloringPages';
 import { play } from '@/audio/sfx';
+import { useI18n } from '@/i18n';
 import { Pressy } from '../components/Pressy';
 import { font, radius, raised, useTheme } from '../theme/theme';
 
@@ -30,6 +31,7 @@ function ToolButton({ icon, label, onPress, active, save }: { icon: string; labe
 }
 
 export function ColoringCanvas({ page, initial, onSave }: { page: ColoringPage; initial?: Snapshot; onSave: (s: Snapshot) => void }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const [tool, setTool] = useState<Tool>('fill');
   const [color, setColor] = useState(COLORS[0]);
@@ -98,12 +100,12 @@ export function ColoringCanvas({ page, initial, onSave }: { page: ColoringPage; 
       </GestureDetector>
 
       <View style={styles.tools}>
-        {([['fill', '🪣', 'تعبئة'], ['brush', '🖌️', 'فرشاة'], ['sticker', '⭐', 'ملصقات']] as const).map(([id, icon, label]) => (
-          <ToolButton key={id} icon={icon} label={label} active={tool === id} onPress={() => setTool(id)} />
+        {([['fill', '🪣'], ['brush', '🖌️'], ['sticker', '⭐']] as const).map(([id, icon]) => (
+          <ToolButton key={id} icon={icon} label={tr(`art.tools.${id}`)} active={tool === id} onPress={() => setTool(id)} />
         ))}
-        <ToolButton icon="↩️" label="تراجع" onPress={undo} />
-        <ToolButton icon="🧽" label="مسح" onPress={() => commit({ fills: {}, strokes: [], stickers: [] })} />
-        <ToolButton icon="💾" label="حفظ" onPress={() => onSave(art)} save />
+        <ToolButton icon="↩️" label={tr('art.tools.undo')} onPress={undo} />
+        <ToolButton icon="🧽" label={tr('art.tools.clear')} onPress={() => commit({ fills: {}, strokes: [], stickers: [] })} />
+        <ToolButton icon="💾" label={tr('art.tools.save')} onPress={() => onSave(art)} save />
       </View>
 
       {tool === 'sticker' ? (
@@ -116,7 +118,7 @@ export function ColoringCanvas({ page, initial, onSave }: { page: ColoringPage; 
         <>
           <ScrollView horizontal contentContainerStyle={styles.row} showsHorizontalScrollIndicator={false}>
             {COLORS.map((c) => (
-              <Pressy key={c} sound={false} onPress={() => setColor(c)} accessibilityLabel={`لون ${c}`}
+              <Pressy key={c} sound={false} onPress={() => setColor(c)} accessibilityLabel={tr('art.colorLabel', { color: c })}
                 style={[styles.sw, { backgroundColor: c, borderWidth: color === c ? 5 : 2, borderColor: color === c ? t.primary : t.border }]} />
             ))}
           </ScrollView>
@@ -132,7 +134,7 @@ export function ColoringCanvas({ page, initial, onSave }: { page: ColoringPage; 
         </>
       )}
       <Text style={[font.small, { color: t.textMuted, textAlign: 'center' }]}>
-        {tool === 'fill' ? 'اختر لونًا ثم المس جزءًا من الرسمة' : tool === 'brush' ? 'ارسم بإصبعك' : 'المس الرسمة لتضع ملصقًا'}
+        {tr(tool === 'fill' ? 'art.tipFill' : tool === 'brush' ? 'art.tipBrush' : 'art.tipSticker')}
       </Text>
     </View>
   );

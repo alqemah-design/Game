@@ -78,7 +78,7 @@ describe('waste sorting', () => {
     });
   });
   it('every bin has items, and the four bins are paper, plastic, food and other', () => {
-    expect(Object.keys(N.BINS).sort()).toEqual(['food', 'other', 'paper', 'plastic']);
+    expect(Object.keys(N.BINS).sort()).toEqual(['food', 'general', 'paper', 'plastic']);
     for (const b of Object.keys(N.BINS)) expect(N.WASTE.filter((w) => w.bin === b).length).toBeGreaterThanOrEqual(5);
     expect(N.binsFor(9)).toHaveLength(4);
   });

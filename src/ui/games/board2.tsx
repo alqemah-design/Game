@@ -5,6 +5,7 @@ import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import Animated, { ZoomIn, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as B from '@/domain/games/boardGames';
+import { useI18n } from '@/i18n';
 import { aiMove, winner, type Board } from '@/domain/games/ticTacToe';
 import { COLORS } from '@/domain/content/shapes';
 import type { Difficulty } from '@/domain/types';
@@ -16,7 +17,8 @@ import { font, radius, raised, useTheme } from '../theme/theme';
 
 function Prompt({ children }: { children: string }) {
   const t = useTheme();
-  return <Text style={[font.body, { color: t.textMuted, textAlign: 'center', marginVertical: 8, writingDirection: 'rtl' }]}>{children}</Text>;
+  const { dir } = useI18n();
+  return <Text style={[font.body, { color: t.textMuted, textAlign: 'center', marginVertical: 8, writingDirection: dir }]}>{children}</Text>;
 }
 
 // ── Tic-tac-toe vs Minimax ───────────────────────────────────────────────
@@ -32,6 +34,7 @@ function Mark({ player }: { player: 'X' | 'O' }) {
 }
 
 export function TicTacToeGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const [board, setBoard] = useState<Board>(Array(9).fill(null));
   // Child starts on odd rounds, robot on even ones – practising both openings.
@@ -77,13 +80,13 @@ export function TicTacToeGame({ api }: { api: GameApi }) {
   };
 
   const line = result && result !== 'draw' ? result.line : [];
-  const msg = result === 'draw' ? 'تعادل! أحسنت الدفاع 🤝' : result?.player === 'X' ? 'فزت! 🎉' : result ? 'فاز الروبوت هذه المرة، جرّب مجددًا 💪' : thinking ? 'الروبوت يفكر… 🤖' : 'دورك! أنت ❌';
+  const msg = tr(result === 'draw' ? 'boards.tttDraw' : result?.player === 'X' ? 'boards.tttWin' : result ? 'boards.tttLose' : thinking ? 'boards.tttThinking' : 'boards.tttYourTurn');
   return (
     <View style={{ flex: 1, alignItems: 'center', padding: 16 }}>
       <Prompt>{msg}</Prompt>
       <View style={[styles.ttt, { backgroundColor: t.border }]}>
         {board.map((c, i) => (
-          <Pressy key={i} sound={false} onPress={() => tap(i)} accessibilityLabel={c === 'X' ? 'إكس' : c === 'O' ? 'أو' : 'خانة فارغة'}
+          <Pressy key={i} sound={false} onPress={() => tap(i)} accessibilityLabel={tr(c === 'X' ? 'boards.tttX' : c === 'O' ? 'boards.tttO' : 'boards.tttEmpty')}
             style={[styles.tttCell, raised(t, line.includes(i) ? t.successBg : t.card)]}>
             {c && <Animated.View entering={ZoomIn} style={{ width: '62%', aspectRatio: 1 }}><Mark player={c} /></Animated.View>}
           </Pressy>
@@ -95,6 +98,7 @@ export function TicTacToeGame({ api }: { api: GameApi }) {
 
 // ── Maze ─────────────────────────────────────────────────────────────────
 export function MazeGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const maze = useMemo(() => B.generateMaze(api.genLevel, api.rng), [api.roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const best = useMemo(() => B.shortestPath(maze), [maze]);
   const [pos, setPos] = useState<[number, number]>(maze.start);
@@ -154,7 +158,7 @@ export function MazeGame({ api }: { api: GameApi }) {
 
   return (
     <View style={{ flex: 1, padding: 16, alignItems: 'center' }} onLayout={(e) => setBoxH(e.nativeEvent.layout.height)}>
-      <Prompt>{`اسحب أو استخدم الأسهم • الخطوات: ${steps}`}</Prompt>
+      <Prompt>{tr('boards.mazePrompt', { steps })}</Prompt>
       <GestureDetector gesture={swipe}>
         {/* Square board that leaves room for the arrow pad (~300pt) on short screens. */}
         <View style={[styles.garden, { maxWidth: boxH ? Math.max(160, Math.min(520, boxH - 300)) : 520 }]} onLayout={(e) => setW(e.nativeEvent.layout.width - 8 /* frame */)}>
@@ -189,6 +193,7 @@ function Arrow({ label, onPress }: { label: string; onPress: () => void }) {
 
 // ── Number memory ────────────────────────────────────────────────────────
 export function NumberMemoryGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const { seq, showMs } = useMemo(() => B.numberSequence(api.genLevel, api.rng), [api.roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [phase, setPhase] = useState<'show' | 'input'>('show');
@@ -214,7 +219,7 @@ export function NumberMemoryGame({ api }: { api: GameApi }) {
 
   return (
     <View style={{ flex: 1, padding: 16, alignItems: 'center' }}>
-      <Prompt>{phase === 'show' ? 'احفظ هذه الأرقام…' : 'اكتب الأرقام بنفس الترتيب'}</Prompt>
+      <Prompt>{tr(phase === 'show' ? 'boards.numbersShow' : 'boards.numbersType')}</Prompt>
       <View style={[styles.display, { backgroundColor: t.card, borderColor: shake ? '#F87171' : t.border }]}>
         <Text style={{ fontSize: seq.length > 7 ? 38 : 48, fontWeight: '900', letterSpacing: 6, color: t.text }}>
           {phase === 'show' ? seq : input.padEnd(seq.length, '•')}
@@ -232,7 +237,7 @@ export function NumberMemoryGame({ api }: { api: GameApi }) {
               <Text style={{ fontSize: 30, fontWeight: '800', color: '#FFF' }}>✓</Text>
             </Pressy>
           </View>
-          <BigButton small label="أرني مرة أخرى" icon="👀" color={t.card} textColor={t.text} onPress={() => { setInput(''); setPhase('show'); }} style={{ marginTop: 12 }} />
+          <BigButton small label={tr('common.showAgain')} icon="👀" color={t.card} textColor={t.text} onPress={() => { setInput(''); setPhase('show'); }} style={{ marginTop: 12 }} />
         </>
       )}
     </View>
@@ -254,6 +259,7 @@ function Pad({ color, lit, onPress, disabled }: { color: string; lit: boolean; o
 }
 
 export function ColorSequenceGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const { palette, sequence, stepMs } = useMemo(() => B.colorSequence(api.genLevel, api.rng), [api.roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [phase, setPhase] = useState<'ready' | 'watch' | 'input'>('ready');
   const [lit, setLit] = useState(-1);
@@ -290,11 +296,11 @@ export function ColorSequenceGame({ api }: { api: GameApi }) {
   const cols = palette.length <= 4 ? 2 : palette.length <= 6 ? 3 : 4;
   return (
     <View style={{ flex: 1, padding: 16, alignItems: 'center' }}>
-      <Prompt>{phase === 'watch' ? 'راقب الألوان…' : phase === 'input' ? `كرر التسلسل (${pos}/${sequence.length})` : `تسلسل من ${sequence.length} ألوان`}</Prompt>
+      <Prompt>{phase === 'watch' ? tr('boards.colorsWatch') : phase === 'input' ? tr('boards.colorsRepeat', { pos, total: sequence.length }) : tr('boards.colorsReady', { count: sequence.length })}</Prompt>
       <View style={[styles.pads, { maxWidth: cols * 130 }]}>
         {palette.map((name, i) => <View key={name} style={{ width: `${100 / cols}%`, padding: 6 }}><Pad color={COLORS[name].hex} lit={lit === i} disabled={phase !== 'input'} onPress={() => tap(i)} /></View>)}
       </View>
-      {phase === 'ready' && <BigButton label="ابدأ" icon="▶" onPress={show} style={{ marginTop: 24, minWidth: 200 }} />}
+      {phase === 'ready' && <BigButton label={tr('common.start')} icon="▶" onPress={show} style={{ marginTop: 24, minWidth: 200 }} />}
     </View>
   );
 }

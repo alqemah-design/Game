@@ -4,6 +4,7 @@ import { Text } from '@/ui/components/Text';
 import Svg, { Circle, Defs, Ellipse, G, Line, LinearGradient, Path, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSequence, withTiming } from 'react-native-reanimated';
 import { BINS, type Bin } from '@/domain/games/newGames';
+import { useI18n } from '@/i18n';
 
 /** Paper / plastic / food / other: simple pictograms on the bin label. */
 function LabelIcon({ bin }: { bin: Bin }) {
@@ -31,7 +32,7 @@ function LabelIcon({ bin }: { bin: Bin }) {
           <Path d="M62 58 Q70 52 72 58 Q66 62 62 58 Z" fill="#22C55E" />
         </G>
       );
-    case 'other':
+    case 'general':
       return (
         <G>
           <Path d="M50 62 L70 62 L67 88 L53 88 Z" fill="#FFFFFF" stroke="#1F2937" strokeWidth="2" />
@@ -44,6 +45,7 @@ function LabelIcon({ bin }: { bin: Bin }) {
 
 /** A wheelie bin drawn with light and shade. The lid is a separate layer so it can swing open. */
 export function WheelieBin({ bin, width, open, wobble, glow }: { bin: Bin; width: number; open: number; wobble: number; glow?: boolean }) {
+  const { t: tr } = useI18n();
   const c = BINS[bin];
   const h = width * 1.25;
   const lid = useSharedValue(0);
@@ -102,7 +104,7 @@ export function WheelieBin({ bin, width, open, wobble, glow }: { bin: Bin; width
         </Animated.View>
       </View>
       <View style={[styles.nameplate, { backgroundColor: c.dark }]}>
-        <Text style={[styles.name, { fontSize: width < 95 ? 11 : 14 }]} numberOfLines={2}>{c.ar}</Text>
+        <Text style={[styles.name, { fontSize: width < 95 ? 11 : 14 }]} numberOfLines={2}>{tr(`bins.${bin}`)}</Text>
       </View>
     </Animated.View>
   );

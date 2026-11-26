@@ -66,7 +66,7 @@ export const DEFAULT_PROFILE_SETTINGS: ProfileSettings = { ...DEFAULT_GAME_SETTI
 
 export function createProfile(id: string, name: string, now: number, avatar: Avatar = DEFAULT_AVATAR): Profile {
   return {
-    id, name: name.trim() || 'بطل', avatar, createdAt: now,
+    id, name: name.trim() || '⭐', avatar, createdAt: now, // UI passes a localized default name
     points: 0, stars: 0, currentStreak: 0, bestStreak: 0,
     games: {}, achievements: [], seenStickers: [], artworks: [], activity: {}, seenIntros: [],
     settings: { ...DEFAULT_PROFILE_SETTINGS },

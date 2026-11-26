@@ -4,27 +4,25 @@ import { Text } from '@/ui/components/Text';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { ARABIC_LETTERS, type ArabicLetter } from '@/domain/content/arabicLetters';
 import { speak } from '@/audio/speech';
+import { useI18n } from '@/i18n';
 import type { GameApi } from '../components/GameShell';
 import { Pressy } from '../components/Pressy';
 import { font, radius, useTheme } from '../theme/theme';
 import { ArabicLettersGame, type ArabicMode } from './choice';
 
-const MODES: { id: ArabicMode; label: string }[] = [
-  { id: 'listen', label: '🔊 استمع' },
-  { id: 'first', label: '🐰 الكلمة' },
-  { id: 'explore', label: '🔍 استكشف' },
-];
+const MODES: ArabicMode[] = ['listen', 'first', 'explore'];
 
 /** Three modes on one screen: listening challenge, first-letter challenge, free exploration. */
 export function ArabicLettersScreen({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const [mode, setMode] = useState<ArabicMode>('listen');
   return (
     <View style={{ flex: 1 }}>
       <View style={[styles.seg, { backgroundColor: t.card }]}>
         {MODES.map((m) => (
-          <Pressy key={m.id} onPress={() => setMode(m.id)} style={[styles.segBtn, mode === m.id && { backgroundColor: t.primary }]}>
-            <Text style={[font.small, { color: mode === m.id ? t.primaryText : t.text }]}>{m.label}</Text>
+          <Pressy key={m} onPress={() => setMode(m)} style={[styles.segBtn, mode === m && { backgroundColor: t.primary }]}>
+            <Text style={[font.small, { color: mode === m ? t.primaryText : t.text }]}>{tr(`boards.arabicModes.${m}`)}</Text>
           </Pressy>
         ))}
       </View>

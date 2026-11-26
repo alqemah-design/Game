@@ -4,6 +4,7 @@ import { Text } from '@/ui/components/Text';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import type { GameMeta } from '@/domain/games/catalog';
 import { speak, stopSpeaking } from '@/audio/speech';
+import { useI18n } from '@/i18n';
 import { BigButton } from './BigButton';
 import { Owl } from './Owl';
 import { Pressy } from './Pressy';
@@ -12,11 +13,13 @@ import { font, radius, raised, useTheme } from '../theme/theme';
 /** Bumi the owl explains a game out loud – shown on the first visit and from the "?" button. */
 export function GameIntro({ visible, meta, onClose }: { visible: boolean; meta: GameMeta; onClose: () => void }) {
   const t = useTheme();
+  const { t: tr, lang } = useI18n();
+  const howTo = tr(`games.${meta.id}.howTo`);
   useEffect(() => {
     if (!visible) return;
-    const id = setTimeout(() => speak(meta.howTo, 'ar'), 450);
+    const id = setTimeout(() => speak(howTo, lang), 450);
     return () => { clearTimeout(id); stopSpeaking(); };
-  }, [visible, meta.howTo]);
+  }, [visible, howTo, lang]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -24,19 +27,19 @@ export function GameIntro({ visible, meta, onClose }: { visible: boolean; meta: 
         <Animated.View entering={ZoomIn.springify().damping(12)} style={[styles.card, { backgroundColor: t.card }]}>
           <View style={[styles.gameBadge, { backgroundColor: meta.color }]}>
             <Text style={styles.gameEmoji}>{meta.emoji}</Text>
-            <Text style={styles.gameTitle}>{meta.title}</Text>
+            <Text style={styles.gameTitle}>{tr(`games.${meta.id}.title`)}</Text>
           </View>
           <View style={styles.row}>
             <Owl size={110} mood="wave" />
             <Animated.View entering={FadeInDown.delay(250)} style={[styles.bubble, { backgroundColor: t.cardAlt }]}>
-              <Text style={[font.body, { color: t.text, lineHeight: 28 }]}>{meta.howTo}</Text>
+              <Text style={[font.body, { color: t.text, lineHeight: 28 }]}>{howTo}</Text>
               <View style={[styles.tail, { borderTopColor: t.cardAlt }]} />
             </Animated.View>
           </View>
-          <Pressy onPress={() => speak(meta.howTo, 'ar')} accessibilityLabel="أعد الشرح" style={[styles.again, raised(t, t.cardAlt)]}>
-            <Text style={[font.body, { color: t.text }]}>🔊 أعد الشرح</Text>
+          <Pressy onPress={() => speak(howTo, lang)} accessibilityLabel={tr('game.replayExplanation')} style={[styles.again, raised(t, t.cardAlt)]}>
+            <Text style={[font.body, { color: t.text }]}>🔊 {tr('game.replayExplanation')}</Text>
           </Pressy>
-          <BigButton label="هيا نلعب!" icon="🚀" onPress={onClose} color={t.success} style={{ alignSelf: 'stretch', marginTop: 12 }} />
+          <BigButton label={tr('common.letsPlay')} icon="🚀" onPress={onClose} color={t.success} style={{ alignSelf: 'stretch', marginTop: 12 }} />
         </Animated.View>
       </View>
     </Modal>

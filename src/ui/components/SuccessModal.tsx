@@ -5,6 +5,7 @@ import Animated, { Easing, FadeInUp, ZoomIn, cancelAnimation, useAnimatedStyle, 
 import Svg, { Circle, Defs, G, Path, RadialGradient, Stop } from 'react-native-svg';
 import type { ProgressEvents } from '@/domain/progress';
 import { play } from '@/audio/sfx';
+import { useI18n, type TKey } from '@/i18n';
 import { BigButton } from './BigButton';
 import { Confetti } from './Confetti';
 import { font, radius, useTheme } from '../theme/theme';
@@ -57,10 +58,10 @@ function StarBurst() {
   );
 }
 
-const CHEERS = ['أحسنت!', 'رائع!', 'ممتاز!', 'بطل!', 'مذهل!'];
 
 export function SuccessModal({ visible, level, points, perfect, events, effects, onNext, onReplay, onHome }: Props) {
   const t = useTheme();
+  const { t: tr } = useI18n();
   useEffect(() => {
     if (!visible) return;
     play('levelUp');
@@ -74,9 +75,9 @@ export function SuccessModal({ visible, level, points, perfect, events, effects,
         <Animated.View entering={ZoomIn.springify().damping(12)} style={[styles.card, { backgroundColor: t.card }]}>
           <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
             <StarBurst />
-            <Text style={[font.title, { color: t.text }]}>{CHEERS[level % CHEERS.length]}</Text>
-            <Text style={[font.body, { color: t.textMuted, marginTop: 4 }]}>أكملت المستوى {level}</Text>
-            <View style={styles.starsRow} accessibilityLabel={`${events.stars ?? 1} من 3 نجوم`}>
+            <Text style={[font.title, { color: t.text }]}>{tr(`success.cheers.c${(level % 5) as 0 | 1 | 2 | 3 | 4}`)}</Text>
+            <Text style={[font.body, { color: t.textMuted, marginTop: 4 }]}>{tr('success.completed', { level })}</Text>
+            <View style={styles.starsRow} accessibilityLabel={tr('success.starsOf3', { count: events.stars ?? 1 })}>
               {[0, 1, 2].map((i) => (
                 <Animated.View key={i} entering={ZoomIn.delay(350 + i * 220).springify().damping(9)}>
                   <Svg width={i === 1 ? 54 : 44} height={i === 1 ? 54 : 44} viewBox="0 0 100 100">
@@ -87,27 +88,27 @@ export function SuccessModal({ visible, level, points, perfect, events, effects,
               ))}
             </View>
             <View style={[styles.pill, { backgroundColor: t.cardAlt }]}>
-              <Text style={[font.h2, { color: t.text }]}>+{points} نقطة</Text>
+              <Text style={[font.h2, { color: t.text }]}>{tr('success.points', { count: points })}</Text>
             </View>
-            {events.dailyBonus && <Text style={[font.body, { color: t.primary }]}>✨ لعبة اليوم: نقاطك مضاعفة!</Text>}
-            {perfect && <Text style={[font.body, { color: t.success }]}>🎯 بلا أي خطأ!</Text>}
-            {events.adapted === 'jump' && <Text style={[font.body, { color: t.text, textAlign: 'center' }]}>🚀 أنت سريع! سنقفز مستوى للأمام</Text>}
-            {events.adapted === 'repeat' && <Text style={[font.body, { color: t.text, textAlign: 'center' }]}>💪 لنتدرّب على هذا المستوى مرة أخرى</Text>}
+            {events.dailyBonus && <Text style={[font.body, { color: t.primary }]}>{tr('success.dailyBonus')}</Text>}
+            {perfect && <Text style={[font.body, { color: t.success }]}>{tr('success.perfect')}</Text>}
+            {events.adapted === 'jump' && <Text style={[font.body, { color: t.text, textAlign: 'center' }]}>{tr('success.jump')}</Text>}
+            {events.adapted === 'repeat' && <Text style={[font.body, { color: t.text, textAlign: 'center' }]}>{tr('success.repeat')}</Text>}
 
             {events.stickers.map((s) => (
               <Animated.View key={s.points} entering={FadeInUp.delay(500)} style={[styles.reward, { backgroundColor: t.hintBg }]}>
                 <Text style={{ fontSize: 44 }}>{s.emoji}</Text>
-                <Text style={[font.body, { color: t.text }]}>ملصق جديد: {s.name}</Text>
+                <Text style={[font.body, { color: t.text }]}>{tr('success.newSticker', { name: tr(`stickers.s${s.points}` as TKey) })}</Text>
               </Animated.View>
             ))}
             {events.achievements.map((a) => (
               <Animated.View key={a.id} entering={FadeInUp.delay(700)} style={[styles.reward, { backgroundColor: t.successBg }]}>
                 <Text style={{ fontSize: 40 }}>{a.emoji}</Text>
                 <View style={{ flexShrink: 1 }}>
-                  <Text style={[font.body, { color: t.text }]}>إنجاز: {a.title}</Text>
+                  <Text style={[font.body, { color: t.text }]}>{tr('success.achievement', { title: tr(`achievements.${a.id}.title` as TKey) })}</Text>
                   {a.unlocks && (
                     <Text style={[font.small, { color: t.textMuted }]}>
-                      {a.unlocks.kind === 'coloringPage' ? '🎨 فتحت صفحة تلوين جديدة' : '🎈 فتحت زينة جديدة للرئيسية'}
+                      {a.unlocks.kind === 'coloringPage' ? tr('success.unlockedPage') : tr('success.unlockedDecoration')}
                     </Text>
                   )}
                 </View>
@@ -115,10 +116,10 @@ export function SuccessModal({ visible, level, points, perfect, events, effects,
             ))}
 
             <View style={styles.actions}>
-              <BigButton label={events.adapted === 'repeat' ? 'نتدرّب مرة أخرى' : 'المستوى التالي'} icon="▶" onPress={onNext} color={t.success} style={{ alignSelf: 'stretch' }} />
+              <BigButton label={events.adapted === 'repeat' ? tr('success.practiceAgain') : tr('success.next')} icon="▶" onPress={onNext} color={t.success} style={{ alignSelf: 'stretch' }} />
               <View style={styles.row}>
-                <BigButton small label="إعادة" icon="↻" onPress={onReplay} color={t.cardAlt} textColor={t.text} style={{ flex: 1 }} />
-                <BigButton small label="الرئيسية" icon="🏠" onPress={onHome} color={t.cardAlt} textColor={t.text} style={{ flex: 1 }} />
+                <BigButton small label={tr('success.replay')} icon="↻" onPress={onReplay} color={t.cardAlt} textColor={t.text} style={{ flex: 1 }} />
+                <BigButton small label={tr('common.home')} icon="🏠" onPress={onHome} color={t.cardAlt} textColor={t.text} style={{ flex: 1 }} />
               </View>
             </View>
           </ScrollView>

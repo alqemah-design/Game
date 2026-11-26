@@ -3,7 +3,6 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/components/Text';
 import * as G from '@/domain/games/choiceGames';
 import { COLORS } from '@/domain/content/shapes';
-import { CONTINENT_AR } from '@/domain/content/countries';
 import { ChoiceGame } from '../components/ChoiceGame';
 import type { GameApi } from '../components/GameShell';
 import { Pressy } from '../components/Pressy';
@@ -11,9 +10,12 @@ import { ShapeIcon } from '../components/ShapeIcon';
 import { font, radius, raised, useTheme } from '../theme/theme';
 import { Clock } from './Clock';
 import { speak } from '@/audio/speech';
+import { useI18n } from '@/i18n';
 
-function ListenButton({ onPress, label = 'استمع' }: { onPress: () => void; label?: string }) {
+function ListenButton({ onPress, label }: { onPress: () => void; label?: string }) {
   const t = useTheme();
+  const { t: tr } = useI18n();
+  label = label ?? tr('common.listen');
   return (
     <Pressy sound={false} onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={[styles.listen, raised(t, t.primary, '#5B21B6'), { borderWidth: 6, borderColor: 'rgba(255,255,255,0.7)', borderBottomWidth: 10 }]}>
       <View pointerEvents="none" style={styles.listenShine} />
@@ -31,12 +33,13 @@ const Big = ({ children, size = 44 }: { children: string | number; size?: number
 export function SoundLetterGame({ api }: { api: GameApi }) {
   return (
     <ChoiceGame api={api} generate={G.soundLetterRound} columns={3}
-      renderPrompt={(_r, replay) => <ListenButton onPress={replay} label="Listen" />}
+      renderPrompt={(_r, replay) => <ListenButton onPress={replay} label="Listen" />} // teaches English letters
       renderOption={(o) => <Big size={48}>{o}</Big>} />
   );
 }
 
 export function FruitsGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   return (
     <ChoiceGame api={api} generate={G.produceRound} columns={2} optionHeight={80}
@@ -47,7 +50,7 @@ export function FruitsGame({ api }: { api: GameApi }) {
         <Pressy sound={false} disabled={!api.hint} onPress={replay} style={{ alignItems: 'center' }} accessibilityLabel={r.prompt.item.ar}>
           <Text style={{ fontSize: 110, zIndex: 1 }}>{r.prompt.item.emoji}</Text>
           <View style={styles.plate} />
-          <Text style={[font.body, { color: t.textMuted }]}>{r.prompt.lang === 'en' ? 'What is it in English?' : 'ما اسم هذه؟'}</Text>
+          <Text style={[font.body, { color: t.textMuted }]}>{tr(r.prompt.lang === 'en' ? 'boards.whatIsItEn' : 'boards.whatIsIt')}</Text>
         </Pressy>
       )}
       renderOption={(o) => <Big size={24}>{o}</Big>} />
@@ -55,6 +58,7 @@ export function FruitsGame({ api }: { api: GameApi }) {
 }
 
 export function FlagsGame({ api }: { api: GameApi }) {
+  const { t: tr, name } = useI18n();
   const t = useTheme();
   return (
     <ChoiceGame api={api} generate={G.flagRound} columns={2} optionHeight={72} autoSpeak={false}
@@ -64,10 +68,10 @@ export function FlagsGame({ api }: { api: GameApi }) {
             <View style={styles.pole}><View style={styles.poleCap} /></View>
             <Text style={{ fontSize: 130, marginStart: -6 }}>{r.prompt.country.flag}</Text>
           </View>
-          {api.hint && <Text style={[font.body, { color: t.textMuted }]}>تلميح: في {CONTINENT_AR[r.prompt.country.continent]}</Text>}
+          {api.hint && <Text style={[font.body, { color: t.textMuted }]}>{tr('boards.flagHint', { continent: tr(`continents.${r.prompt.country.continent}`) })}</Text>}
         </View>
       )}
-      renderOption={(o) => <Big size={22}>{o.ar}</Big>} />
+      renderOption={(o) => <Big size={22}>{name(o)}</Big>} />
   );
 }
 
@@ -110,6 +114,7 @@ export function PatternGame({ api }: { api: GameApi }) {
 
 type ArabicMode = 'listen' | 'first' | 'explore';
 export function ArabicLettersGame({ api, mode }: { api: GameApi; mode: Exclude<ArabicMode, 'explore'> }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   if (mode === 'listen')
     return (
@@ -123,7 +128,7 @@ export function ArabicLettersGame({ api, mode }: { api: GameApi; mode: Exclude<A
         <Pressy sound={false} onPress={replay} style={{ alignItems: 'center' }}>
           <Text style={{ fontSize: 110 }}>{r.prompt.letter.emoji}</Text>
           <Text style={[font.h2, { color: t.text }]}>{r.prompt.letter.word}</Text>
-          <Text style={[font.small, { color: t.textMuted }]}>بأي حرف تبدأ الكلمة؟</Text>
+          <Text style={[font.small, { color: t.textMuted }]}>{tr('boards.firstLetter')}</Text>
         </Pressy>
       )}
       renderOption={(o) => <Big size={52}>{o.char}</Big>} />

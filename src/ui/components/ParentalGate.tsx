@@ -2,15 +2,18 @@ import { useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/components/Text';
 import { BigButton } from './BigButton';
+import { useI18n } from '@/i18n';
 import { Pressy } from './Pressy';
 import { font, radius, useTheme } from '../theme/theme';
 
-const AR_DIGITS = ['صفر', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة', 'ستة', 'سبعة', 'ثمانية', 'تسعة'];
 
 /**
  * Parental gate (required by Apple for Kids-category apps before settings, data deletion and links).
  * The question is written in words, so a pre-reader cannot solve it by matching digits.
  */
+/** The question is written in words, so a pre-reader cannot solve it by matching digits. */
+type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
 function makeQuestion() {
   const a = 3 + Math.floor(Math.random() * 7), b = 3 + Math.floor(Math.random() * 7);
   const answer = a * b;
@@ -21,6 +24,7 @@ function makeQuestion() {
 
 export function ParentalGate({ visible, onPass, onCancel }: { visible: boolean; onPass: () => void; onCancel: () => void }) {
   const t = useTheme();
+  const { t: tr } = useI18n();
   const [q, setQ] = useState(makeQuestion);
   const [wrong, setWrong] = useState(false);
   // A fresh question after every attempt, so it cannot be solved by trying each option.
@@ -34,9 +38,9 @@ export function ParentalGate({ visible, onPass, onCancel }: { visible: boolean; 
     <Modal visible={visible} transparent animationType="fade" onRequestClose={cancel}>
       <View style={[styles.backdrop, { backgroundColor: t.overlay }]}>
         <View style={[styles.card, { backgroundColor: t.card }]}>
-          <Text style={[font.h2, { color: t.text, textAlign: 'center' }]}>للأهل فقط 🔒</Text>
+          <Text style={[font.h2, { color: t.text, textAlign: 'center' }]}>{tr('gate.title')}</Text>
           <Text style={[font.body, { color: t.textMuted, textAlign: 'center', marginTop: 8 }]}>
-            كم يساوي {AR_DIGITS[q.a]} ضرب {AR_DIGITS[q.b]}؟
+            {tr('gate.question', { a: tr(`gate.numbers.n${q.a as Digit}`), b: tr(`gate.numbers.n${q.b as Digit}`) })}
           </Text>
           <View style={styles.grid}>
             {q.options.map((o) => (
@@ -45,8 +49,8 @@ export function ParentalGate({ visible, onPass, onCancel }: { visible: boolean; 
               </Pressy>
             ))}
           </View>
-          {wrong && <Text style={[font.small, { color: t.hint, textAlign: 'center' }]}>إجابة غير صحيحة</Text>}
-          <BigButton small label="إلغاء" color={t.cardAlt} textColor={t.text} onPress={cancel} style={{ marginTop: 12 }} />
+          {wrong && <Text style={[font.small, { color: t.hint, textAlign: 'center' }]}>{tr('gate.wrong')}</Text>}
+          <BigButton small label={tr('common.cancel')} color={t.cardAlt} textColor={t.text} onPress={cancel} style={{ marginTop: 12 }} />
         </View>
       </View>
     </Modal>

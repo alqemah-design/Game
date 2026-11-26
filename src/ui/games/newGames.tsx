@@ -6,6 +6,7 @@ import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import * as N from '@/domain/games/newGames';
 import { play } from '@/audio/sfx';
 import { speak } from '@/audio/speech';
+import { useI18n } from '@/i18n';
 import { OptionTile, type OptionState } from '../components/ChoiceGame';
 import type { GameApi } from '../components/GameShell';
 import { Pressy } from '../components/Pressy';
@@ -17,11 +18,13 @@ import { Awning, Money } from './market/Money';
 
 function Prompt({ children }: { children: string }) {
   const t = useTheme();
-  return <Text style={[font.body, { color: t.textMuted, textAlign: 'center', marginVertical: 8 }]}>{children}</Text>;
+  const { dir } = useI18n();
+  return <Text style={[font.body, { color: t.textMuted, textAlign: 'center', marginVertical: 8, writingDirection: dir }]}>{children}</Text>;
 }
 
 // ── Little market ────────────────────────────────────────────────────────
 export function MarketGame({ api }: { api: GameApi }) {
+  const { t: tr, name, lang } = useI18n();
   const t = useTheme();
   const [round] = useState(() => N.marketRound(api.genLevel, api.rng));
   const [tray, setTray] = useState<number[]>([]);
@@ -32,9 +35,9 @@ export function MarketGame({ api }: { api: GameApi }) {
   const total = tray.reduce((a, b) => a + b, 0);
 
   useEffect(() => {
-    const id = setTimeout(() => speak(round.item.ar, 'ar'), 300);
+    const id = setTimeout(() => speak(name(round.item), lang), 300);
     return () => clearTimeout(id);
-  }, [round]);
+  }, [round, lang, name]);
 
   const add = (v: number) => {
     if (done || round.mode !== 'pay') return;
@@ -58,10 +61,10 @@ export function MarketGame({ api }: { api: GameApi }) {
           <View style={styles.counter} />
         </View>
         <View style={{ alignItems: 'center' }}>
-          <Text style={[font.h2, { color: t.text }]}>{round.item.ar}</Text>
+          <Text style={[font.h2, { color: t.text }]}>{name(round.item)}</Text>
           <View style={styles.priceTag}>
             <View style={styles.tagHole} />
-            <Text style={[font.h2, { color: '#7C2D12' }]}>السعر {round.price}</Text>
+            <Text style={[font.h2, { color: '#7C2D12' }]}>{tr('boards.price', { price: round.price })}</Text>
           </View>
         </View>
       </View>
@@ -78,8 +81,8 @@ export function MarketGame({ api }: { api: GameApi }) {
     return (
       <View style={{ flex: 1, padding: 16 }}>
         {header}
-        <View style={styles.row}><Text style={[font.body, { color: t.text }]}>دفعت</Text><Money value={r.paid} /></View>
-        <Prompt>كم الباقي؟</Prompt>
+        <View style={styles.row}><Text style={[font.body, { color: t.text }]}>{tr('boards.paid')}</Text><Money value={r.paid} /></View>
+        <Prompt>{tr('boards.howMuchChange')}</Prompt>
         <View style={styles.grid}>
           {r.options.map((o, i) => {
             const state: OptionState = done && i === r.correctIndex ? 'correct' : wrongOpts.includes(i) ? 'wrong' : api.hint && i === r.correctIndex ? 'hint' : 'idle';
@@ -95,13 +98,13 @@ export function MarketGame({ api }: { api: GameApi }) {
     <View style={{ flex: 1, padding: 16 }}>
       {header}
       <View style={[styles.purse, { backgroundColor: done ? t.successBg : over ? t.soft : t.cardAlt, borderColor: t.border }]}>
-        <Text style={[font.small, { color: t.textMuted }]}>{over ? 'أكثر من السعر! جرّب مرة أخرى' : `في يدك: ${total}`}</Text>
+        <Text style={[font.small, { color: t.textMuted }]}>{over ? tr('boards.tooMuch') : tr('boards.inHand', { total })}</Text>
         <View style={styles.trayRow}>
           {tray.map((v, i) => <Animated.View key={i} entering={ZoomIn}><Money value={v} small /></Animated.View>)}
         </View>
       </View>
-      {hint.length > 0 && <Text style={[font.small, { color: t.hint, textAlign: 'center' }]}>تلميح: {hint.join(' + ')}</Text>}
-      <Prompt>اضغط على النقود لتدفع السعر بالضبط</Prompt>
+      {hint.length > 0 && <Text style={[font.small, { color: t.hint, textAlign: 'center' }]}>{tr('common.hint', { text: hint.join(' + ') })}</Text>}
+      <Prompt>{tr('boards.payExactly')}</Prompt>
       <View style={styles.wallet}>
         {round.money.map((v) => (
           <Pressy key={v} sound={false} onPress={() => add(v)} accessibilityLabel={`${v}`} style={{ padding: 4 }}>
@@ -110,7 +113,7 @@ export function MarketGame({ api }: { api: GameApi }) {
         ))}
       </View>
       {tray.length > 0 && !done && (
-        <BigButton small label="أرجع آخر قطعة" icon="↩" color={t.card} textColor={t.text} onPress={() => setTray(tray.slice(0, -1))} style={{ alignSelf: 'center', marginTop: 12 }} />
+        <BigButton small label={tr('boards.takeBack')} icon="↩" color={t.card} textColor={t.text} onPress={() => setTray(tray.slice(0, -1))} style={{ alignSelf: 'center', marginTop: 12 }} />
       )}
     </View>
   );
@@ -126,6 +129,7 @@ function StudyBar({ ms }: { ms: number }) {
 }
 
 export function WhatChangedGame({ api }: { api: GameApi }) {
+  const { t: tr, name } = useI18n();
   const t = useTheme();
   const [round] = useState(() => N.changedRound(api.genLevel, api.rng));
   const [phase, setPhase] = useState<'study' | 'cover' | 'answer'>('study');
@@ -150,11 +154,11 @@ export function WhatChangedGame({ api }: { api: GameApi }) {
     else { setWrongOpts([...wrongOpts, i]); api.wrong(); }
   };
 
-  const question = phase === 'study' ? 'انظر إلى الغرفة جيدًا وتذكّر أين كل شيء…'
+  const question = phase === 'study' ? tr('boards.roomStudy')
     : phase === 'cover' ? ' '
-    : round.kind === 'missing' ? 'شيء اختفى من الغرفة! ما هو؟'
-    : round.kind === 'new' ? 'شيء جديد ظهر في الغرفة! المسه'
-    : 'شيئان تبادلا مكانيهما، المس أحدهما';
+    : round.kind === 'missing' ? tr('boards.roomMissing')
+    : round.kind === 'new' ? tr('boards.roomNew')
+    : tr('boards.roomSwap');
   const shownFound = found === null ? [] : round.kind === 'missing' ? [] : round.answerCells;
 
   return (
@@ -179,14 +183,14 @@ export function WhatChangedGame({ api }: { api: GameApi }) {
             return (
               <OptionTile key={i} state={state} width={round.options.length === 3 ? '30%' : '22%'} height={84} onPress={() => choose(i)}>
                 <Text style={{ fontSize: 40 }}>{o}</Text>
-                <Text style={[font.small, { color: t.textMuted, fontSize: 11 }]} numberOfLines={1}>{N.roomItemName(o)}</Text>
+                <Text style={[font.small, { color: t.textMuted, fontSize: 11 }]} numberOfLines={1}>{name(N.roomItem(o) ?? { ar: '' })}</Text>
               </OptionTile>
             );
           })}
         </View>
       )}
       {phase === 'answer' && found === null && (
-        <BigButton small label="أرني الغرفة مرة أخرى" icon="👀" color={t.card} textColor={t.text} onPress={() => setPhase('study')} style={{ marginTop: 14 }} />
+        <BigButton small label={tr('boards.roomAgain')} icon="👀" color={t.card} textColor={t.text} onPress={() => setPhase('study')} style={{ marginTop: 14 }} />
       )}
     </View>
   );
@@ -194,6 +198,7 @@ export function WhatChangedGame({ api }: { api: GameApi }) {
 
 // ── Mirror ───────────────────────────────────────────────────────────────
 export function MirrorGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const round = useMemo(() => N.mirrorRound(api.genLevel, api.rng), [api.roundKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [filled, setFilled] = useState<number[]>([]);
@@ -218,14 +223,14 @@ export function MirrorGame({ api }: { api: GameApi }) {
 
   return (
     <View style={{ flex: 1, padding: 16, alignItems: 'center' }} onLayout={(e) => setW(Math.min(e.nativeEvent.layout.width - 32, 420))}>
-      <Prompt>{round.axis === 'vertical' ? 'لوّن النصف الأيمن ليطابق الأيسر كالمرآة' : 'لوّن النصف السفلي ليطابق العلوي كالمرآة'}</Prompt>
+      <Prompt>{tr(round.axis === 'vertical' ? 'boards.mirrorVertical' : 'boards.mirrorHorizontal')}</Prompt>
       {cell > 0 && (
         <View style={{ width: round.cols * cell + (round.cols - 1) * 4, flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
           {Array.from({ length: round.rows * round.cols }, (_, i) => {
             const src = isSource(i);
             const on = src ? round.given.includes(i) : filled.includes(i);
             const bg = on ? color : wrong === i ? t.soft : nextHint === i ? t.hintBg : src ? t.cardAlt : t.card;
-            return <Pressy key={i} sound={false} onPress={() => tap(i)} accessibilityLabel={src ? 'نموذج' : 'خانة'}
+            return <Pressy key={i} sound={false} onPress={() => tap(i)} accessibilityLabel={tr(src ? 'boards.mirrorModel' : 'boards.mirrorCell')}
               style={{ width: cell, height: cell, borderRadius: 8, backgroundColor: bg, borderWidth: 2, borderColor: src ? 'transparent' : t.border }} />;
           })}
           {/* mirror line */}
@@ -244,6 +249,7 @@ type Box = { x: number; y: number; w: number; h: number };
 
 /** Drag the thing into the right wheelie bin (or tap the bin). The lid opens and swallows it. */
 export function RecyclingGame({ api }: { api: GameApi }) {
+  const { t: tr, name, lang } = useI18n();
   const t = useTheme();
   const [round] = useState(() => N.recyclingRound(api.genLevel, api.settings, api.rng));
   const bins = round.options;
@@ -258,9 +264,9 @@ export function RecyclingGame({ api }: { api: GameApi }) {
   const binW = area ? Math.min(118, (area - (bins.length - 1) * 10) / bins.length) : 0;
 
   useEffect(() => {
-    const id = setTimeout(() => speak(round.prompt.item.ar, 'ar'), 300);
+    const id = setTimeout(() => speak(name(round.prompt.item), lang), 300);
     return () => clearTimeout(id);
-  }, [round]);
+  }, [round, lang, name]);
 
   const measureBins = () => binViews.current.forEach((v, i) => v?.measureInWindow((x, y, w, h) => { binBoxes.current[i] = { x, y, w, h }; }));
   const bump = (arr: number[], i: number) => arr.map((n, j) => (j === i ? n + 1 : n));
@@ -307,12 +313,12 @@ export function RecyclingGame({ api }: { api: GameApi }) {
     <View style={{ flex: 1, padding: 16, justifyContent: 'space-between' }} onLayout={(e) => setArea(e.nativeEvent.layout.width - 32)}>
       {/* zIndex keeps the dragged item above the bins */}
       <View style={{ alignItems: 'center', zIndex: 10, elevation: 10 }}>
-        <Prompt>اسحب الشيء إلى الحاوية الصحيحة</Prompt>
+        <Prompt>{tr('boards.wastePrompt')}</Prompt>
         <View ref={itemView} collapsable={false}>
           <GestureDetector gesture={pan}>
-            <Animated.View style={[styles.wasteItem, { backgroundColor: t.card }, itemStyle]} accessibilityLabel={round.prompt.item.ar}>
+            <Animated.View style={[styles.wasteItem, { backgroundColor: t.card }, itemStyle]} accessibilityLabel={name(round.prompt.item)}>
               <Text style={{ fontSize: 76 }}>{round.prompt.item.emoji}</Text>
-              <Text style={[font.body, { color: t.text }]}>{round.prompt.item.ar}</Text>
+              <Text style={[font.body, { color: t.text }]}>{name(round.prompt.item)}</Text>
             </Animated.View>
           </GestureDetector>
         </View>
@@ -320,7 +326,7 @@ export function RecyclingGame({ api }: { api: GameApi }) {
       <View style={[styles.ground, { backgroundColor: t.dark ? '#334155' : '#D6D3D1' }]}>
         <View style={styles.binsRow}>
           {binW > 0 && bins.map((b, i) => (
-            <Pressy key={b} sound={false} onPress={() => tapBin(i)} accessibilityLabel={`حاوية ${N.BINS[b].ar}`}>
+            <Pressy key={b} sound={false} onPress={() => tapBin(i)} accessibilityLabel={tr('boards.binLabel', { bin: tr(`bins.${b}`) })}>
               <View ref={(v) => { binViews.current[i] = v; }} collapsable={false}>
                 <WheelieBin bin={b} width={binW} open={opened[i]} wobble={wobble[i]} glow={api.hint && i === round.correctIndex && !done} />
               </View>

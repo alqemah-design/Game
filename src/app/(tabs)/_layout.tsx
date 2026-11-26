@@ -2,6 +2,7 @@ import { Text } from '@/ui/components/Text';
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { useActiveProfile } from '@/data/progressStore';
+import { useI18n } from '@/i18n';
 import { useTheme } from '@/ui/theme/theme';
 
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
@@ -12,6 +13,7 @@ const icon = (emoji: string) => function TabBarIcon({ focused }: { focused: bool
 };
 
 export default function TabsLayout() {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const profile = useActiveProfile();
   // No login: the first launch simply asks for the child's name.
@@ -26,9 +28,9 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontSize: 13, fontWeight: '700' },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'الرئيسية', tabBarIcon: icon('🏠') }} />
-      <Tabs.Screen name="stats" options={{ title: 'إنجازاتي', tabBarIcon: icon('📊') }} />
-      <Tabs.Screen name="art" options={{ title: 'الرسم', tabBarIcon: icon('🎨') }} />
+      <Tabs.Screen name="index" options={{ title: tr('tabs.home'), tabBarIcon: icon('🏠') }} />
+      <Tabs.Screen name="stats" options={{ title: tr('tabs.stats'), tabBarIcon: icon('📊') }} />
+      <Tabs.Screen name="art" options={{ title: tr('tabs.art'), tabBarIcon: icon('🎨') }} />
     </Tabs>
   );
 }

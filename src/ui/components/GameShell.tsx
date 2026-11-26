@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type Rea
 import { AppState, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/components/Text';
 import { goBack } from '../nav';
+import { useI18n } from '@/i18n';
 import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { GAME_BY_ID } from '@/domain/games/catalog';
 import { effectiveLevel } from '@/domain/engine/difficulty';
@@ -51,6 +52,7 @@ const NO_SCROLL = new Set<GameId>(['maze', 'recycling']);
 export function GameShell({ gameId, children }: { gameId: GameId; children: (api: GameApi) => ReactNode }) {
   const meta = GAME_BY_ID[gameId];
   const t = useTheme();
+  const { t: tr, backArrow } = useI18n();
   const profile = useActiveProfile();
   const completeLevel = useProgress((s) => s.completeLevel);
   const markIntroSeen = useProgress((s) => s.markIntroSeen);
@@ -118,15 +120,15 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
   return (
     <Screen scenery={meta.color} calm>
       <View style={styles.header}>
-        <Pressy accessibilityRole="button" accessibilityLabel="رجوع" onPress={goBack} style={[styles.iconBtn, raised(t)]}>
-          <Text style={{ fontSize: 26 }}>→</Text>
+        <Pressy accessibilityRole="button" accessibilityLabel={tr('common.back')} onPress={goBack} style={[styles.iconBtn, raised(t)]}>
+          <Text style={{ fontSize: 26 }}>{backArrow}</Text>
         </Pressy>
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={[font.h2, { color: t.text, fontSize: 19 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{meta.title}</Text>
-          <Text style={[font.small, { color: t.textMuted }]}>المستوى {s.level}</Text>
+          <Text style={[font.h2, { color: t.text, fontSize: 19 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{tr(`games.${gameId}.title`)}</Text>
+          <Text style={[font.small, { color: t.textMuted }]}>{tr('common.level', { level: s.level })}</Text>
         </View>
-        <Pressy accessibilityRole="button" accessibilityLabel="كيف ألعب؟" onPress={() => setIntroOpen(true)} style={[styles.iconBtn, styles.helpBtn, raised(t)]}>
-          <Text style={[font.h2, { color: t.primary }]}>؟</Text>
+        <Pressy accessibilityRole="button" accessibilityLabel={tr('game.howToPlay')} onPress={() => setIntroOpen(true)} style={[styles.iconBtn, styles.helpBtn, raised(t)]}>
+          <Text style={[font.h2, { color: t.primary }]}>{tr('game.helpMark')}</Text>
         </Pressy>
         <View style={[styles.score, raised(t)]}>
           <Text style={[font.body, { color: t.text }]}>⭐ {profile?.stars ?? 0}</Text>
@@ -172,8 +174,9 @@ function Dot({ filled, track }: { filled: boolean; color: string; track: string 
 }
 
 function RoundDots({ total, done, color, track }: { total: number; done: number; color: string; track: string }) {
+  const { t } = useI18n();
   return (
-    <View style={styles.dots} accessibilityLabel={`الجولة ${Math.min(done + 1, total)} من ${total}`}>
+    <View style={styles.dots} accessibilityLabel={t('game.roundOf', { n: Math.min(done + 1, total), total })}>
       {Array.from({ length: total }, (_, i) => <Dot key={i} filled={i < done} color={color} track={track} />)}
     </View>
   );

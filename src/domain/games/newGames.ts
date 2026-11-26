@@ -4,12 +4,12 @@ import { clamp, int, pick, sample, shuffle, withDistractors, type Rng } from '..
 import type { ChoiceRound, GameSettings } from '../types';
 
 // ── Little market ────────────────────────────────────────────────────────
-export type MarketItem = { emoji: string; ar: string };
+export type MarketItem = { emoji: string; ar: string; en: string };
 export const MARKET_ITEMS: readonly MarketItem[] = [
-  { emoji: '🍎', ar: 'تفاحة' }, { emoji: '🍌', ar: 'موز' }, { emoji: '🧃', ar: 'عصير' }, { emoji: '🥛', ar: 'حليب' },
-  { emoji: '🍞', ar: 'خبز' }, { emoji: '🧀', ar: 'جبنة' }, { emoji: '🍪', ar: 'بسكويت' }, { emoji: '🍦', ar: 'آيس كريم' },
-  { emoji: '✏️', ar: 'قلم' }, { emoji: '📒', ar: 'دفتر' }, { emoji: '🎈', ar: 'بالون' }, { emoji: '⚽', ar: 'كرة' },
-  { emoji: '🧸', ar: 'دبدوب' }, { emoji: '🪁', ar: 'طائرة ورقية' }, { emoji: '🎨', ar: 'ألوان' }, { emoji: '🚗', ar: 'سيارة لعبة' },
+  { emoji: '🍎', ar: 'تفاحة', en: 'apple' }, { emoji: '🍌', ar: 'موز', en: 'bananas' }, { emoji: '🧃', ar: 'عصير', en: 'juice' }, { emoji: '🥛', ar: 'حليب', en: 'milk' },
+  { emoji: '🍞', ar: 'خبز', en: 'bread' }, { emoji: '🧀', ar: 'جبنة', en: 'cheese' }, { emoji: '🍪', ar: 'بسكويت', en: 'biscuits' }, { emoji: '🍦', ar: 'آيس كريم', en: 'ice cream' },
+  { emoji: '✏️', ar: 'قلم', en: 'pencil' }, { emoji: '📒', ar: 'دفتر', en: 'notebook' }, { emoji: '🎈', ar: 'بالون', en: 'balloon' }, { emoji: '⚽', ar: 'كرة', en: 'ball' },
+  { emoji: '🧸', ar: 'دبدوب', en: 'teddy bear' }, { emoji: '🪁', ar: 'طائرة ورقية', en: 'kite' }, { emoji: '🎨', ar: 'ألوان', en: 'paints' }, { emoji: '🚗', ar: 'سيارة لعبة', en: 'toy car' },
 ];
 
 export type MarketRound =
@@ -53,22 +53,22 @@ export const ROOM_SPOTS: readonly SpotKind[] = [
   'floor', 'floor', 'floor', 'floor', 'floor',
 ];
 
-export type RoomItem = { emoji: string; ar: string; kinds: SpotKind[] };
+export type RoomItem = { emoji: string; ar: string; en: string; kinds: SpotKind[] };
 export const ROOM_ITEMS: readonly RoomItem[] = [
-  { emoji: '📚', ar: 'كتب', kinds: ['surface'] }, { emoji: '⏰', ar: 'منبّه', kinds: ['surface'] },
-  { emoji: '☕', ar: 'كوب', kinds: ['surface'] }, { emoji: '🍎', ar: 'تفاحة', kinds: ['surface'] },
-  { emoji: '🤖', ar: 'روبوت', kinds: ['surface', 'floor'] }, { emoji: '🦆', ar: 'بطة', kinds: ['surface'] },
-  { emoji: '🎲', ar: 'نرد', kinds: ['surface'] }, { emoji: '🎁', ar: 'هدية', kinds: ['surface', 'floor'] },
-  { emoji: '🧩', ar: 'بازل', kinds: ['surface'] }, { emoji: '📻', ar: 'راديو', kinds: ['surface'] },
-  { emoji: '🖍️', ar: 'ألوان', kinds: ['surface'] }, { emoji: '🏆', ar: 'كأس', kinds: ['surface'] },
-  { emoji: '🖼️', ar: 'لوحة', kinds: ['wall'] }, { emoji: '🪞', ar: 'مرآة', kinds: ['wall'] },
-  { emoji: '🗓️', ar: 'تقويم', kinds: ['wall'] }, { emoji: '🎯', ar: 'لوحة سهام', kinds: ['wall'] },
-  { emoji: '🪁', ar: 'طائرة ورقية', kinds: ['wall'] }, { emoji: '🏅', ar: 'ميدالية', kinds: ['wall'] },
-  { emoji: '⚽', ar: 'كرة', kinds: ['floor'] }, { emoji: '🏀', ar: 'كرة سلة', kinds: ['floor'] },
-  { emoji: '🎒', ar: 'حقيبة', kinds: ['floor'] }, { emoji: '👟', ar: 'حذاء', kinds: ['floor'] },
-  { emoji: '🚂', ar: 'قطار', kinds: ['floor'] }, { emoji: '🛹', ar: 'لوح تزلج', kinds: ['floor'] },
-  { emoji: '🧸', ar: 'دبدوب', kinds: ['floor', 'surface'] }, { emoji: '🪴', ar: 'نبتة', kinds: ['floor', 'surface'] },
-  { emoji: '🐈', ar: 'قطة', kinds: ['floor'] }, { emoji: '🥁', ar: 'طبل', kinds: ['floor'] },
+  { emoji: '📚', ar: 'كتب', en: 'books', kinds: ['surface'] }, { emoji: '⏰', ar: 'منبّه', en: 'alarm clock', kinds: ['surface'] },
+  { emoji: '☕', ar: 'كوب', en: 'mug', kinds: ['surface'] }, { emoji: '🍎', ar: 'تفاحة', en: 'apple', kinds: ['surface'] },
+  { emoji: '🤖', ar: 'روبوت', en: 'robot', kinds: ['surface', 'floor'] }, { emoji: '🦆', ar: 'بطة', en: 'duck', kinds: ['surface'] },
+  { emoji: '🎲', ar: 'نرد', en: 'dice', kinds: ['surface'] }, { emoji: '🎁', ar: 'هدية', en: 'present', kinds: ['surface', 'floor'] },
+  { emoji: '🧩', ar: 'بازل', en: 'puzzle', kinds: ['surface'] }, { emoji: '📻', ar: 'راديو', en: 'radio', kinds: ['surface'] },
+  { emoji: '🖍️', ar: 'ألوان', en: 'crayons', kinds: ['surface'] }, { emoji: '🏆', ar: 'كأس', en: 'trophy', kinds: ['surface'] },
+  { emoji: '🖼️', ar: 'لوحة', en: 'painting', kinds: ['wall'] }, { emoji: '🪞', ar: 'مرآة', en: 'mirror', kinds: ['wall'] },
+  { emoji: '🗓️', ar: 'تقويم', en: 'calendar', kinds: ['wall'] }, { emoji: '🎯', ar: 'لوحة سهام', en: 'dartboard', kinds: ['wall'] },
+  { emoji: '🪁', ar: 'طائرة ورقية', en: 'kite', kinds: ['wall'] }, { emoji: '🏅', ar: 'ميدالية', en: 'medal', kinds: ['wall'] },
+  { emoji: '⚽', ar: 'كرة', en: 'ball', kinds: ['floor'] }, { emoji: '🏀', ar: 'كرة سلة', en: 'basketball', kinds: ['floor'] },
+  { emoji: '🎒', ar: 'حقيبة', en: 'backpack', kinds: ['floor'] }, { emoji: '👟', ar: 'حذاء', en: 'shoe', kinds: ['floor'] },
+  { emoji: '🚂', ar: 'قطار', en: 'train', kinds: ['floor'] }, { emoji: '🛹', ar: 'لوح تزلج', en: 'skateboard', kinds: ['floor'] },
+  { emoji: '🧸', ar: 'دبدوب', en: 'teddy bear', kinds: ['floor', 'surface'] }, { emoji: '🪴', ar: 'نبتة', en: 'plant', kinds: ['floor', 'surface'] },
+  { emoji: '🐈', ar: 'قطة', en: 'cat', kinds: ['floor'] }, { emoji: '🥁', ar: 'طبل', en: 'drum', kinds: ['floor'] },
 ];
 
 export type ChangeKind = 'missing' | 'new' | 'swap';
@@ -132,7 +132,7 @@ export function changedRound(level: number, rng: Rng): ChangedRound {
   return { before, after, kind, answerCells, options, correctIndex, studyMs: 2500 + count * 500 };
 }
 
-export const roomItemName = (emoji: string) => ROOM_ITEMS.find((it) => it.emoji === emoji)?.ar ?? '';
+export const roomItem = (emoji: string) => ROOM_ITEMS.find((it) => it.emoji === emoji);
 
 // ── Mirror ───────────────────────────────────────────────────────────────
 export type MirrorRound = {
@@ -166,28 +166,29 @@ export function mirrorRound(level: number, rng: Rng): MirrorRound {
 }
 
 // ── Waste sorting ────────────────────────────────────────────────────────
-export type Bin = 'paper' | 'plastic' | 'food' | 'other';
-export const BINS: Record<Bin, { ar: string; color: string; dark: string; light: string; icon: string }> = {
-  paper: { ar: 'ورق', color: '#2563EB', dark: '#1E3A8A', light: '#60A5FA', icon: '📄' },
-  plastic: { ar: 'بلاستيك', color: '#EAB308', dark: '#A16207', light: '#FDE047', icon: '🧴' },
-  food: { ar: 'طعام', color: '#16A34A', dark: '#14532D', light: '#4ADE80', icon: '🍎' },
-  other: { ar: 'مخلفات أخرى', color: '#4B5563', dark: '#1F2937', light: '#9CA3AF', icon: '🗑️' },
+export type Bin = 'paper' | 'plastic' | 'food' | 'general';
+/** Bin colours; names live in the i18n dictionaries under bins.<id>. */
+export const BINS: Record<Bin, { color: string; dark: string; light: string; icon: string }> = {
+  paper: { color: '#2563EB', dark: '#1E3A8A', light: '#60A5FA', icon: '📄' },
+  plastic: { color: '#EAB308', dark: '#A16207', light: '#FDE047', icon: '🧴' },
+  food: { color: '#16A34A', dark: '#14532D', light: '#4ADE80', icon: '🍎' },
+  general: { color: '#4B5563', dark: '#1F2937', light: '#9CA3AF', icon: '🗑️' },
 };
-export type WasteItem = { emoji: string; ar: string; bin: Bin };
+export type WasteItem = { emoji: string; ar: string; en: string; bin: Bin };
 export const WASTE: readonly WasteItem[] = [
-  { emoji: '🍌', ar: 'قشر موز', bin: 'food' }, { emoji: '🍏', ar: 'بقايا تفاحة', bin: 'food' }, { emoji: '🥕', ar: 'جزرة', bin: 'food' },
-  { emoji: '🦴', ar: 'عظمة', bin: 'food' }, { emoji: '🥚', ar: 'قشر بيض', bin: 'food' }, { emoji: '🍉', ar: 'قشر بطيخ', bin: 'food' },
-  { emoji: '📰', ar: 'جريدة', bin: 'paper' }, { emoji: '📦', ar: 'كرتونة', bin: 'paper' }, { emoji: '📄', ar: 'ورقة', bin: 'paper' },
-  { emoji: '✉️', ar: 'ظرف', bin: 'paper' }, { emoji: '🗞️', ar: 'مجلة', bin: 'paper' },
-  { emoji: '🧴', ar: 'علبة شامبو', bin: 'plastic' }, { emoji: '🥤', ar: 'كوب بلاستيك', bin: 'plastic' }, { emoji: '🍼', ar: 'رضّاعة', bin: 'plastic' },
-  { emoji: '🪣', ar: 'دلو', bin: 'plastic' }, { emoji: '🛍️', ar: 'كيس', bin: 'plastic' },
-  { emoji: '🧽', ar: 'إسفنجة مستعملة', bin: 'other' }, { emoji: '🪥', ar: 'فرشاة أسنان قديمة', bin: 'other' },
-  { emoji: '🧦', ar: 'جورب ممزق', bin: 'other' }, { emoji: '🖍️', ar: 'قلم شمع مكسور', bin: 'other' }, { emoji: '🩹', ar: 'لاصق مستعمل', bin: 'other' },
+  { emoji: '🍌', ar: 'قشر موز', en: 'banana peel', bin: 'food' }, { emoji: '🍏', ar: 'بقايا تفاحة', en: 'apple core', bin: 'food' }, { emoji: '🥕', ar: 'جزرة', en: 'carrot', bin: 'food' },
+  { emoji: '🦴', ar: 'عظمة', en: 'bone', bin: 'food' }, { emoji: '🥚', ar: 'قشر بيض', en: 'eggshells', bin: 'food' }, { emoji: '🍉', ar: 'قشر بطيخ', en: 'watermelon rind', bin: 'food' },
+  { emoji: '📰', ar: 'جريدة', en: 'newspaper', bin: 'paper' }, { emoji: '📦', ar: 'كرتونة', en: 'cardboard box', bin: 'paper' }, { emoji: '📄', ar: 'ورقة', en: 'sheet of paper', bin: 'paper' },
+  { emoji: '✉️', ar: 'ظرف', en: 'envelope', bin: 'paper' }, { emoji: '🗞️', ar: 'مجلة', en: 'magazine', bin: 'paper' },
+  { emoji: '🧴', ar: 'علبة شامبو', en: 'shampoo bottle', bin: 'plastic' }, { emoji: '🥤', ar: 'كوب بلاستيك', en: 'plastic cup', bin: 'plastic' }, { emoji: '🍼', ar: 'رضّاعة', en: 'baby bottle', bin: 'plastic' },
+  { emoji: '🪣', ar: 'دلو', en: 'bucket', bin: 'plastic' }, { emoji: '🛍️', ar: 'كيس', en: 'bag', bin: 'plastic' },
+  { emoji: '🧽', ar: 'إسفنجة مستعملة', en: 'used sponge', bin: 'general' }, { emoji: '🪥', ar: 'فرشاة أسنان قديمة', en: 'old toothbrush', bin: 'general' },
+  { emoji: '🧦', ar: 'جورب ممزق', en: 'torn sock', bin: 'general' }, { emoji: '🖍️', ar: 'قلم شمع مكسور', en: 'broken crayon', bin: 'general' }, { emoji: '🩹', ar: 'لاصق مستعمل', en: 'used plaster', bin: 'general' },
 ];
 
 /** Bins in use at a level, in a fixed order (they stay in place so the child learns where they are). */
 export const binsFor = (level: number): Bin[] =>
-  tier([[1, ['food', 'paper']], [3, ['paper', 'plastic', 'food']], [5, ['paper', 'plastic', 'food', 'other']]] as const, level).slice();
+  tier([[1, ['food', 'paper']], [3, ['paper', 'plastic', 'food']], [5, ['paper', 'plastic', 'food', 'general']]] as const, level).slice();
 
 export function recyclingRound(level: number, _s: GameSettings, rng: Rng): ChoiceRound<{ item: WasteItem }, Bin> {
   const bins = binsFor(level);

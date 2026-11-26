@@ -4,43 +4,43 @@
  */
 export type AvatarKind = 'boy' | 'girl';
 export type AvatarPart = 'hair' | 'outfit' | 'pattern' | 'accessory';
-export type AvatarOption = { id: string; label: string; minPoints: number; kinds?: AvatarKind[] };
+export type AvatarOption = { id: string; minPoints: number; kinds?: AvatarKind[] };
 
-export const KIND_AR: Record<AvatarKind, string> = { boy: 'ولد', girl: 'بنت' };
+export const AVATAR_KINDS: readonly AvatarKind[] = ['boy', 'girl'];
 
 export const AVATAR_OPTIONS: Record<AvatarPart, AvatarOption[]> = {
   hair: [
-    { id: 'short', label: 'قصير', minPoints: 0, kinds: ['boy'] },
-    { id: 'side', label: 'مفروق', minPoints: 0, kinds: ['boy'] },
-    { id: 'curly', label: 'مجعد', minPoints: 0 },
-    { id: 'buzz', label: 'قصير جدًا', minPoints: 150, kinds: ['boy'] },
-    { id: 'spiky', label: 'مدبب', minPoints: 500, kinds: ['boy'] },
-    { id: 'long', label: 'طويل', minPoints: 0, kinds: ['girl'] },
-    { id: 'ponytail', label: 'ذيل حصان', minPoints: 0, kinds: ['girl'] },
-    { id: 'hijab', label: 'حجاب', minPoints: 0, kinds: ['girl'] },
-    { id: 'bob', label: 'قصّة قصيرة', minPoints: 150, kinds: ['girl'] },
-    { id: 'pigtails', label: 'ضفيرتان', minPoints: 500, kinds: ['girl'] },
+    { id: 'short', minPoints: 0, kinds: ['boy'] },
+    { id: 'side', minPoints: 0, kinds: ['boy'] },
+    { id: 'curly', minPoints: 0 },
+    { id: 'buzz', minPoints: 150, kinds: ['boy'] },
+    { id: 'spiky', minPoints: 500, kinds: ['boy'] },
+    { id: 'long', minPoints: 0, kinds: ['girl'] },
+    { id: 'ponytail', minPoints: 0, kinds: ['girl'] },
+    { id: 'hijab', minPoints: 0, kinds: ['girl'] },
+    { id: 'bob', minPoints: 150, kinds: ['girl'] },
+    { id: 'pigtails', minPoints: 500, kinds: ['girl'] },
   ],
   outfit: [
-    { id: 'tshirt', label: 'قميص', minPoints: 0 },
-    { id: 'thobe', label: 'ثوب', minPoints: 0, kinds: ['boy'] },
-    { id: 'dress', label: 'فستان', minPoints: 0, kinds: ['girl'] },
-    { id: 'hoodie', label: 'هودي', minPoints: 300 },
-    { id: 'cape', label: 'عباءة بطل', minPoints: 2000 },
+    { id: 'tshirt', minPoints: 0 },
+    { id: 'thobe', minPoints: 0, kinds: ['boy'] },
+    { id: 'dress', minPoints: 0, kinds: ['girl'] },
+    { id: 'hoodie', minPoints: 300 },
+    { id: 'cape', minPoints: 2000 },
   ],
   pattern: [
-    { id: 'plain', label: 'سادة', minPoints: 0 },
-    { id: 'dots', label: 'نقاط', minPoints: 150 },
-    { id: 'stripes', label: 'خطوط', minPoints: 750 },
-    { id: 'stars', label: 'نجوم', minPoints: 3000 },
+    { id: 'plain', minPoints: 0 },
+    { id: 'dots', minPoints: 150 },
+    { id: 'stripes', minPoints: 750 },
+    { id: 'stars', minPoints: 3000 },
   ],
   accessory: [
-    { id: 'none', label: 'بدون', minPoints: 0 },
-    { id: 'cap', label: 'قبعة', minPoints: 150, kinds: ['boy'] },
-    { id: 'bow', label: 'فيونكة', minPoints: 150, kinds: ['girl'] },
-    { id: 'glasses', label: 'نظارة', minPoints: 500 },
-    { id: 'headphones', label: 'سماعات', minPoints: 1000 },
-    { id: 'crown', label: 'تاج', minPoints: 4000 },
+    { id: 'none', minPoints: 0 },
+    { id: 'cap', minPoints: 150, kinds: ['boy'] },
+    { id: 'bow', minPoints: 150, kinds: ['girl'] },
+    { id: 'glasses', minPoints: 500 },
+    { id: 'headphones', minPoints: 1000 },
+    { id: 'crown', minPoints: 4000 },
   ],
 };
 

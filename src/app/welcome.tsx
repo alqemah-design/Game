@@ -5,7 +5,8 @@ import { router } from 'expo-router';
 import { goBack } from '@/ui/nav';
 import Animated, { FadeInDown, BounceIn } from 'react-native-reanimated';
 import { useProgress } from '@/data/progressStore';
-import { DEFAULT_AVATARS, KIND_AR, SKIN_TONES, PALETTE, withKind, type AvatarKind } from '@/domain/rewards/avatar';
+import { AVATAR_KINDS, DEFAULT_AVATARS, SKIN_TONES, PALETTE, withKind } from '@/domain/rewards/avatar';
+import { useI18n } from '@/i18n';
 import { AvatarView } from '@/ui/components/AvatarView';
 import { BigButton } from '@/ui/components/BigButton';
 import { Pressy } from '@/ui/components/Pressy';
@@ -15,6 +16,7 @@ import { Owl } from '@/ui/components/Owl';
 
 /** First launch / new child. No e-mail, no password – just a name and a face. */
 export default function Welcome() {
+  const { t: tr } = useI18n();
   const t = useTheme();
   const addProfile = useProgress((s) => s.addProfile);
   const hasProfiles = useProgress((s) => Object.keys(s.profiles).length > 0);
@@ -22,7 +24,7 @@ export default function Welcome() {
   const [avatar, setAvatar] = useState(DEFAULT_AVATARS.boy);
 
   const start = () => {
-    addProfile(name, avatar);
+    addProfile(name.trim() || tr('welcome.defaultName'), avatar);
     // From the parent area (add a child) unwind everything back to a clean Home; on first launch replace.
     if (router.canDismiss()) router.dismissTo('/');
     else router.replace('/');
@@ -32,14 +34,14 @@ export default function Welcome() {
     <Screen edges={['top', 'bottom', 'left', 'right']} scenery="#86EFAC">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.root}>
         <Animated.View entering={BounceIn.duration(900)}><Owl size={96} mood="wave" /></Animated.View>
-        <Animated.Text entering={FadeInDown.delay(200)} style={[font.title, { color: t.text }]}>ألعاب العقل</Animated.Text>
+        <Animated.Text entering={FadeInDown.delay(200)} style={[font.title, { color: t.text }]}>{tr('app.name')}</Animated.Text>
         <Animated.View entering={FadeInDown.delay(400)} style={{ alignItems: 'center' }}>
           <AvatarView avatar={avatar} size={140} />
           <View style={styles.kinds}>
-            {(['boy', 'girl'] as AvatarKind[]).map((k) => (
+            {AVATAR_KINDS.map((k) => (
               <Pressy key={k} onPress={() => setAvatar(withKind(avatar, k))} accessibilityRole="button" accessibilityState={{ selected: avatar.kind === k }}
                 style={[styles.kind, { backgroundColor: avatar.kind === k ? t.primary : t.card, borderColor: t.border }]}>
-                <Text style={[font.body, { color: avatar.kind === k ? t.primaryText : t.text }]}>{k === 'boy' ? '👦' : '👧'} {KIND_AR[k]}</Text>
+                <Text style={[font.body, { color: avatar.kind === k ? t.primaryText : t.text }]}>{k === 'boy' ? '👦' : '👧'} {tr(`avatar.kind.${k}`)}</Text>
               </Pressy>
             ))}
           </View>
@@ -55,19 +57,19 @@ export default function Welcome() {
           </View>
         </Animated.View>
         <Animated.View entering={FadeInDown.delay(600)} style={{ alignSelf: 'stretch' }}>
-          <Text style={[font.body, { color: t.textMuted, textAlign: 'center', marginBottom: 8 }]}>ما اسمك؟</Text>
+          <Text style={[font.body, { color: t.textMuted, textAlign: 'center', marginBottom: 8 }]}>{tr('welcome.whatsYourName')}</Text>
           <TextInput
             value={name}
             onChangeText={setName}
             maxLength={20}
-            placeholder="اكتب اسمك هنا"
+            placeholder={tr('welcome.namePlaceholder')}
             placeholderTextColor={t.textMuted}
             style={[styles.input, raised(t), { color: t.text }]}
             returnKeyType="done"
             onSubmitEditing={start}
           />
-          <BigButton label="هيا نلعب!" icon="🚀" onPress={start} style={{ marginTop: 16 }} />
-          {hasProfiles && <BigButton small label="رجوع" color={t.card} textColor={t.text} onPress={goBack} style={{ marginTop: 10 }} />}
+          <BigButton label={tr('common.letsPlay')} icon="🚀" onPress={start} style={{ marginTop: 16 }} />
+          {hasProfiles && <BigButton small label={tr('common.back')} color={t.card} textColor={t.text} onPress={goBack} style={{ marginTop: 10 }} />}
         </Animated.View>
       </KeyboardAvoidingView>
     </Screen>

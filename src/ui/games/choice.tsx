@@ -39,10 +39,10 @@ export function SoundLetterGame({ api }: { api: GameApi }) {
 }
 
 export function FruitsGame({ api }: { api: GameApi }) {
-  const { t: tr } = useI18n();
+  const { t: tr, lang } = useI18n();
   const t = useTheme();
   return (
-    <ChoiceGame api={api} generate={G.produceRound} columns={2} optionHeight={80}
+    <ChoiceGame api={api} generate={(l, s, r) => G.produceRound(l, s, r, lang)} columns={2} optionHeight={80}
       // The name is the answer: say it after a correct pick, or on tap once the hint is showing.
       autoSpeak={false}
       onSolved={(r) => r.speak && speak(r.speak.text, r.speak.lang)}
@@ -50,7 +50,7 @@ export function FruitsGame({ api }: { api: GameApi }) {
         <Pressy sound={false} disabled={!api.hint} onPress={replay} style={{ alignItems: 'center' }} accessibilityLabel={r.prompt.item.ar}>
           <Text style={{ fontSize: 110, zIndex: 1 }}>{r.prompt.item.emoji}</Text>
           <View style={styles.plate} />
-          <Text style={[font.body, { color: t.textMuted }]}>{tr(r.prompt.lang === 'en' ? 'boards.whatIsItEn' : 'boards.whatIsIt')}</Text>
+          <Text style={[font.body, { color: t.textMuted }]}>{tr(r.prompt.lang === lang ? 'boards.whatIsIt' : 'boards.whatIsItOther')}</Text>
         </Pressy>
       )}
       renderOption={(o) => <Big size={24}>{o}</Big>} />
@@ -93,6 +93,7 @@ export function MathGame({ api }: { api: GameApi }) {
 }
 
 export function PatternGame({ api }: { api: GameApi }) {
+  const { t: tr } = useI18n();
   const t = useTheme();
   return (
     <ChoiceGame api={api} generate={G.patternRound} columns={4} optionHeight={84} autoSpeak={false}
@@ -108,6 +109,7 @@ export function PatternGame({ api }: { api: GameApi }) {
           </View>
         );
       }}
+      optionLabel={(o) => tr('shapeColor', { shape: tr(`shapes.${o.shape}`), color: tr(`colors.${o.color}`) })}
       renderOption={(o) => <ShapeIcon shape={o.shape} color={COLORS[o.color].hex} size={52} />} />
   );
 }

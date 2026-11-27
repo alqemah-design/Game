@@ -25,6 +25,8 @@ type Props<P, O> = {
   timeLimit?: number;
   /** Called when the child picks the right answer (e.g. to say the word as reinforcement). */
   onSolved?: (round: ChoiceRound<P, O>) => void;
+  /** Spoken label for options that are pictures only (screen readers). */
+  optionLabel?: (option: O) => string;
 };
 
 /** Generic multiple-choice board used by every "pick the right answer" game. */
@@ -33,7 +35,7 @@ export function ChoiceGame<P, O>(props: Props<P, O>) {
   return <ChoiceRoundView key={props.api.roundKey} {...props} />;
 }
 
-function ChoiceRoundView<P, O>({ api, generate, renderPrompt, renderOption, columns = 2, optionHeight = 96, autoSpeak = true, timeLimit, onSolved }: Props<P, O>) {
+function ChoiceRoundView<P, O>({ api, generate, renderPrompt, renderOption, columns = 2, optionHeight = 96, autoSpeak = true, timeLimit, onSolved, optionLabel }: Props<P, O>) {
   const t = useTheme();
   const [round] = useState(() => generate(api.genLevel, api.settings, api.rng));
   const [wrongSet, setWrongSet] = useState<number[]>([]);
@@ -81,7 +83,7 @@ function ChoiceRoundView<P, O>({ api, generate, renderPrompt, renderOption, colu
         {round.options.map((o, i) => {
           const state: OptionState = solved === i ? 'correct' : wrongSet.includes(i) ? 'wrong' : showHint && i === round.correctIndex ? 'hint' : 'idle';
           return (
-            <OptionTile key={i} state={state} width={`${100 / columns - 3}%`} height={optionHeight} onPress={() => choose(i)}>
+            <OptionTile key={i} state={state} width={`${100 / columns - 3}%`} height={optionHeight} onPress={() => choose(i)} label={optionLabel?.(o)}>
               {renderOption(o, state)}
             </OptionTile>
           );
@@ -92,7 +94,7 @@ function ChoiceRoundView<P, O>({ api, generate, renderPrompt, renderOption, colu
   );
 }
 
-export function OptionTile({ state, children, onPress, width, height }: { state: OptionState; children: ReactNode; onPress: () => void; width: `${number}%`; height: number }) {
+export function OptionTile({ state, children, onPress, width, height, label }: { state: OptionState; children: ReactNode; onPress: () => void; width: `${number}%`; height: number; label?: string }) {
   const t = useTheme();
   const x = useSharedValue(0);
   const pulse = useSharedValue(1);
@@ -111,6 +113,7 @@ export function OptionTile({ state, children, onPress, width, height }: { state:
         onPress={onPress}
         disabled={state === 'wrong'}
         accessibilityRole="button"
+        accessibilityLabel={label}
         style={[styles.tile, raised(t, bg, edge), state !== 'idle' && { borderColor: edge }, { minHeight: Math.max(height, TOUCH) }]}
       >
         {children}

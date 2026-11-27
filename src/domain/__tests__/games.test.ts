@@ -134,3 +134,14 @@ describe('letter teaching order', () => {
     for (let seed = 0; seed < 50; seed++) for (const c of B.capitalPairs(3, createRng(seed)).capitals) expect(B.DIFFERENT_CASE).toContain(c);
   });
 });
+
+describe('fruits & veggies language', () => {
+  it('first levels use the child’s own language, later levels mix both', () => {
+    for (let seed = 0; seed < 40; seed++) {
+      expect(C.produceRound(1, S, createRng(seed), 'en').prompt.lang).toBe('en');
+      expect(C.produceRound(2, S, createRng(seed), 'ar').prompt.lang).toBe('ar');
+    }
+    const later = new Set(Array.from({ length: 60 }, (_, seed) => C.produceRound(6, S, createRng(seed), 'en').prompt.lang));
+    expect([...later].sort()).toEqual(['ar', 'en']);
+  });
+});

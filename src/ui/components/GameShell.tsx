@@ -78,22 +78,23 @@ export function GameShell({ gameId, children }: { gameId: GameId; children: (api
 
   useEffect(() => () => { stopSpeaking(); }, []);
 
-  const [now, setNow] = useState(() => Date.now());
-  // Count play time (only while this screen is open, the app is in front and the intro is closed).
-  const addPlayTime = useProgress((s) => s.addPlayTime);
-  useEffect(() => {
-    if (introOpen) return;
-    let last = Date.now();
-    let active = AppState.currentState === 'active';
-    const flush = () => { const t = Date.now(); if (active) addPlayTime(Math.min(60, Math.round((t - last) / 1000))); last = t; setNow(t); };
-    const id = setInterval(flush, 15000);
-    const sub = AppState.addEventListener('change', (st) => { flush(); active = st === 'active'; });
-    return () => { flush(); clearInterval(id); sub.remove(); };
-  }, [introOpen, addPlayTime]);
 
+  const [now, setNow] = useState(() => Date.now());
   // Daily limit: never cut a level in the middle – stop when the child would start a new one.
   const timeUp = profile ? minutesLeftToday(profile, now) <= 0 : false;
   const [stopped, setStopped] = useState(() => timeUp);
+  const paused = stopped && timeUp; // the 'time is up' screen is showing: not playing
+  // Count play time (only while this screen is open, the app is in front and the intro is closed).
+  const addPlayTime = useProgress((s) => s.addPlayTime);
+  useEffect(() => {
+    if (introOpen || paused) return;
+    let last = Date.now();
+    let active = AppState.currentState === 'active';
+    const flush = () => { const t = Date.now(); const secs = Math.round((t - last) / 1000); if (active && secs > 0) addPlayTime(Math.min(120, secs)); last = t; setNow(t); };
+    const id = setInterval(flush, 60000); // once a minute: cheap on storage, accurate enough
+    const sub = AppState.addEventListener('change', (st) => { flush(); active = st === 'active'; });
+    return () => { flush(); clearInterval(id); sub.remove(); };
+  }, [introOpen, paused, addPlayTime]);
 
   // Callbacks are tagged with the round they were handed out for; the engine drops stale ones
   // (late timers, duplicate reports), so a round can never be counted twice or skipped.

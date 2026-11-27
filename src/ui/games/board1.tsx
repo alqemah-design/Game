@@ -51,7 +51,7 @@ export function ShapeMatchGame({ api }: { api: GameApi }) {
       <Prompt>{tr('boards.shapePrompt')}</Prompt>
       <View style={[styles.area, { backgroundColor: t.card }]}>
         {board.slots.map((p) => (
-          <Pressy key={p.id} sound={false} onPress={() => tapSlot(p.id)} accessibilityLabel={tr('boards.shapeSlot')} style={[styles.cell, hintId === p.id && { backgroundColor: t.hintBg }]}>
+          <Pressy key={p.id} sound={false} onPress={() => tapSlot(p.id)} accessibilityLabel={`${tr('boards.shapeSlot')}: ${tr('shapeColor', { shape: tr(`shapes.${p.shape}`), color: tr(`colors.${p.color}`) })}`} style={[styles.cell, hintId === p.id && { backgroundColor: t.hintBg }]}>
             {placed.includes(p.id)
               ? <Animated.View entering={ZoomIn}><ShapeIcon shape={p.shape} color={COLORS[p.color].hex} size={size} /></Animated.View>
               : <ShapeIcon shape={p.shape} color={api.genLevel >= 9 ? COLORS[p.color].hex : t.textMuted} size={size} outline />}
@@ -60,7 +60,7 @@ export function ShapeMatchGame({ api }: { api: GameApi }) {
       </View>
       <View style={[styles.area, { backgroundColor: 'transparent' }]}>
         {board.pieces.map((p) => !placed.includes(p.id) && (
-          <Pressy key={p.id} onPress={() => setSelected(p.id)} accessibilityLabel={tr('boards.shape')}
+          <Pressy key={p.id} onPress={() => setSelected(p.id)} accessibilityLabel={tr('shapeColor', { shape: tr(`shapes.${p.shape}`), color: tr(`colors.${p.color}`) })}
             style={[styles.cell, { borderColor: selected === p.id ? t.primary : 'transparent', borderWidth: 4, borderRadius: radius.md }, hintId === p.id && { backgroundColor: t.hintBg }]}>
             <ShapeIcon shape={p.shape} color={COLORS[p.color].hex} size={size} />
           </Pressy>

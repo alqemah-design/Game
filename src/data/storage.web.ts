@@ -6,3 +6,10 @@ export const kvStorage: StateStorage = {
   setItem: (key, value) => { try { localStorage.setItem(key, value); } catch {} },
   removeItem: (key) => { try { localStorage.removeItem(key); } catch {} },
 };
+
+/** "Delete all data" in the web preview: every key this app stored. */
+export function wipeStorage() {
+  try {
+    Object.keys(localStorage).filter((k) => k.startsWith('kbg.')).forEach((k) => localStorage.removeItem(k));
+  } catch {}
+}

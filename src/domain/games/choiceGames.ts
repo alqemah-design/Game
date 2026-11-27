@@ -57,9 +57,14 @@ export function arabicFirstLetterRound(level: number, _s: GameSettings, rng: Rng
 
 // ── Fruits & vegetables ──────────────────────────────────────────────────
 export type ProducePrompt = { item: Produce; lang: 'ar' | 'en' };
-export function produceRound(level: number, _s: GameSettings, rng: Rng): ChoiceRound<ProducePrompt, string> {
+/**
+ * Bilingual vocabulary: the first levels use the child's own language (`home`), later levels
+ * mix in the other language so both names are learned.
+ */
+export function produceRound(level: number, _s: GameSettings, rng: Rng, home: 'ar' | 'en' = 'ar'): ChoiceRound<ProducePrompt, string> {
   const item = pick(rng, PRODUCE);
-  const lang: 'ar' | 'en' = level <= 2 ? 'ar' : rng() < 0.5 ? 'ar' : 'en';
+  const other = home === 'ar' ? 'en' : 'ar';
+  const lang: 'ar' | 'en' = level <= 2 ? home : rng() < 0.5 ? home : other;
   const n = tier([[1, 3], [2, 4]] as const, level);
   // Later levels use same-kind distractors (harder: fruit vs fruit).
   const pool = level >= 5 ? PRODUCE.filter((p) => p.kind === item.kind) : PRODUCE;

@@ -99,7 +99,8 @@ const styles = StyleSheet.create({
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   tile: { flexGrow: 1, minWidth: '45%', borderRadius: radius.md, padding: 12, alignItems: 'center' },
   card: { borderRadius: radius.lg, padding: 16 },
-  chart: { flexDirection: 'row', height: 160, gap: 6, direction: 'ltr' },
+  // Follows the reading direction: in Arabic the week runs right → left (today on the left end).
+  chart: { flexDirection: 'row', height: 160, gap: 6 },
   col: { flex: 1, alignItems: 'center', gap: 4 },
   barTrack: { flex: 1, width: '70%', borderRadius: 6, justifyContent: 'flex-end', overflow: 'hidden' },
   skillRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 5 },

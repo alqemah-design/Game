@@ -13,7 +13,10 @@ const FAMILY: Record<string, string> = {
 
 export const fontFor = (weight?: string | number) => FAMILY[String(weight ?? '400')] ?? FAMILY['400'];
 
-export function Text({ style, ...rest }: TextProps) {
+/** Respect the system text size, but cap it so big tiles and buttons keep their shape. */
+const MAX_FONT_SCALE = 1.3;
+
+export function Text({ style, maxFontSizeMultiplier = MAX_FONT_SCALE, ...rest }: TextProps) {
   const flat = StyleSheet.flatten(style) ?? {};
-  return <RNText {...rest} style={[style, { fontFamily: fontFor(flat.fontWeight), fontWeight: 'normal' }]} />;
+  return <RNText {...rest} maxFontSizeMultiplier={maxFontSizeMultiplier} style={[style, { fontFamily: fontFor(flat.fontWeight), fontWeight: 'normal' }]} />;
 }

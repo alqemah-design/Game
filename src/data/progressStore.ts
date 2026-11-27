@@ -5,7 +5,7 @@ import {
   addPlaySeconds, addPoints, applyLevelComplete, createProfile, grantBonusMinutes, normalizeProfiles,
   type Artwork, type LevelResult, type Profile, type ProfileSettings, type ProgressEvents,
 } from '@/domain/progress';
-import { kvStorage } from './storage';
+import { kvStorage, wipeStorage } from './storage';
 import type { LanguagePref } from '@/i18n';
 
 /**
@@ -103,7 +103,8 @@ export const useProgress = create<State & Actions>()(
         markIntroSeen: (gameId) => updateActive((p) => (p.seenIntros.includes(gameId) ? p : { ...p, seenIntros: [...p.seenIntros, gameId] })),
         resetProgress: () =>
           updateActive((p) => ({ ...createProfile(p.id, p.name, p.createdAt, p.avatar), settings: p.settings })),
-        wipeEverything: () => set({ profiles: {}, activeId: null }),
+        // Remove everything on disk first (incl. recovery copies), then start from an empty state.
+        wipeEverything: () => { wipeStorage(); set({ profiles: {}, activeId: null }); },
         setColorScheme: (colorScheme) => set({ colorScheme }),
         setLanguage: (language) => set({ language }),
       };
